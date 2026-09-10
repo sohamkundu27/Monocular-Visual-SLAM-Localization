@@ -188,21 +188,8 @@ class PoseGraph:
         return len(self.nodes)
 
     @property
-    def n_edges(self) -> int:
-        return len(self.odometry_edges) + len(self.loop_edges)
-
-    @property
     def edges(self) -> list[OdometryEdge]:
         return [*self.odometry_edges, *self.loop_edges]
-
-    def initial_trajectory(self) -> Trajectory:
-        """The pre-optimization estimate held in the nodes."""
-        if not self.nodes:
-            return Trajectory(np.zeros((0, 4, 4)))
-        return Trajectory(
-            np.stack([node.pose for node in self.nodes]),
-            frame_ids=np.array([node.frame_id for node in self.nodes], dtype=np.int64),
-        )
 
     def is_connected(self) -> bool:
         """True when every node is reachable from the prior node.

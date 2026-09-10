@@ -200,11 +200,6 @@ class KittiOdometryDataset:
         return self.calibration.K
 
     @cached_property
-    def velo_to_cam(self) -> np.ndarray | None:
-        """``4x4`` velodyne-to-camera transform, or ``None`` if absent."""
-        return self.calib_raw.get("Tr")
-
-    @cached_property
     def image_size(self) -> tuple[int, int]:
         """``(width, height)`` of the first frame."""
         image = self.load_image(0)

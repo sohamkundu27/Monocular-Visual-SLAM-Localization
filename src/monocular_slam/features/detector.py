@@ -73,11 +73,6 @@ class Frame:
         """True when the frame carries descriptors that can be matched."""
         return self.descriptors is not None and len(self.keypoints) > 0
 
-    @property
-    def responses(self) -> np.ndarray:
-        """``(N,)`` detector response strengths."""
-        return np.array([kp.response for kp in self.keypoints], dtype=np.float64)
-
     def __repr__(self) -> str:
         return f"Frame(index={self.index}, frame_id={self.frame_id}, keypoints={len(self)})"
 
