@@ -346,7 +346,7 @@ class KeyframeDatabase:
         norms = np.linalg.norm(vectors, axis=1, keepdims=True)
         vectors = vectors / np.maximum(norms, 1e-12)
 
-        for keyframe, vector in zip(self.keyframes, vectors):
+        for keyframe, vector in zip(self.keyframes, vectors, strict=True):
             keyframe.bow = vector
         self._bow_matrix = vectors
         self._dirty = False
@@ -435,7 +435,9 @@ class KeyframeDatabase:
         """
         scores = self.similarity_scores(query_id)
         low = max(0, query_id - window)
-        neighbours = np.concatenate([scores[low:query_id], scores[query_id + 1 : query_id + 1 + window]])
+        neighbours = np.concatenate(
+            [scores[low:query_id], scores[query_id + 1 : query_id + 1 + window]]
+        )
         finite = neighbours[np.isfinite(neighbours)]
         return float(finite.max()) if len(finite) else 0.0
 

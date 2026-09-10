@@ -9,13 +9,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from synthetic import (
-    KITTI_K,
-    forward_motion,
-    make_scene,
-    pure_rotation,
-    two_view_correspondences,
-)
 
 from monocular_slam.geometry.epipolar import (
     EssentialMatrixResult,
@@ -30,6 +23,13 @@ from monocular_slam.geometry.transforms import (
     invert_se3,
     is_valid_se3,
     rotation_angle_deg,
+)
+from synthetic import (
+    KITTI_K,
+    forward_motion,
+    make_scene,
+    pure_rotation,
+    two_view_correspondences,
 )
 
 

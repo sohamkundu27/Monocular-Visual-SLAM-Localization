@@ -31,8 +31,10 @@ convention (rotation first).
   provide.
 * **Loop edges** get looser translation sigmas than odometry. Their rotation is
   well determined by wide-baseline matching, but their translation *magnitude*
-  is borrowed from odometry (monocular geometry supplies only a direction), so
-  it deserves less confidence than the rotation.
+  is recovered indirectly, from a triangulated depth ratio against neighbouring
+  structure, so it deserves less confidence than the rotation. A loop whose
+  magnitude could not be recovered at all gets a much larger translation sigma
+  still, making it an orientation-only constraint.
 * **Robust kernel.** Loop factors are optionally wrapped in a Huber kernel. A
   single false-positive loop asserts that two unrelated places are the same,
   and under a pure least-squares cost that one enormous residual can drag the
@@ -355,7 +357,11 @@ def build_pose_graph(
         # inflated so the factor acts as an orientation constraint. Heading
         # drift is the dominant error term, so this is worth keeping.
         scale_measured = getattr(closure, "scale_is_measured", True)
-        sigma_trans = loop_sigma_trans if scale_measured else loop_sigma_trans * UNSCALED_LOOP_SIGMA_FACTOR
+        sigma_trans = (
+            loop_sigma_trans
+            if scale_measured
+            else loop_sigma_trans * UNSCALED_LOOP_SIGMA_FACTOR
+        )
         n_unscaled += 0 if scale_measured else 1
         graph.add_loop_edge(
             closure.match_id,

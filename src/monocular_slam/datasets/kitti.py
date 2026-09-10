@@ -28,8 +28,8 @@ import cv2
 import numpy as np
 
 from monocular_slam.datasets.calibration import (
-    CameraCalibration,
     CalibrationError,
+    CameraCalibration,
     calibration_for_camera,
     parse_kitti_calib,
 )
@@ -257,7 +257,9 @@ class KittiOdometryDataset:
                     self.poses_path,
                 )
             else:
-                logger.info("Sequence %s is part of the test split (no ground truth)", self.sequence)
+                logger.info(
+                    "Sequence %s is part of the test split (no ground truth)", self.sequence
+                )
             return None
 
         rows = np.loadtxt(self.poses_path, dtype=np.float64)
@@ -265,7 +267,8 @@ class KittiOdometryDataset:
             rows = rows[None, :]
         if rows.shape[1] != 12:
             raise DatasetError(
-                f"{self.poses_path}: expected 12 values per row, got {rows.shape[1]}"
+                f"{self.poses_path}: expected 12 values per row, "
+                f"got {rows.shape[1]}"
             )
         if len(rows) < self._total_frames:
             raise DatasetError(

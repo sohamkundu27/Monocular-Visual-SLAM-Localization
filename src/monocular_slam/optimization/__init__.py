@@ -3,9 +3,9 @@
 from monocular_slam.optimization.gtsam_backend import (
     OptimizationResult,
     gtsam_available,
+    numpy_to_pose3,
     optimize_pose_graph,
     pose3_to_numpy,
-    numpy_to_pose3,
 )
 from monocular_slam.optimization.pose_graph import (
     LoopEdge,

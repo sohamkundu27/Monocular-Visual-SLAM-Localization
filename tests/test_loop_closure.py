@@ -5,10 +5,9 @@ from __future__ import annotations
 import cv2
 import numpy as np
 import pytest
-from kitti_fixture import make_textured_image
 from scipy.spatial.transform import Rotation
-from synthetic import KITTI_K, forward_motion, project, two_view_correspondences
 
+from kitti_fixture import make_textured_image
 from monocular_slam.config import Config
 from monocular_slam.features.detector import FeatureDetector
 from monocular_slam.features.matcher import FeatureMatcher
@@ -27,6 +26,7 @@ from monocular_slam.loop_closure.detector import (
     LoopCandidate,
     LoopClosureDetector,
 )
+from synthetic import KITTI_K, forward_motion, project, two_view_correspondences
 
 
 def make_keyframe(kf_id: int, descriptors, points=None, pose=None, distance=0.0) -> Keyframe:
@@ -70,7 +70,9 @@ class TestKeyframeSelector:
         assert selector.should_select(5, np.eye(4))
 
     def test_translation_triggers_before_the_interval(self):
-        selector = KeyframeSelector(every_n_frames=1000, min_translation_m=2.0, min_rotation_deg=1e9)
+        selector = KeyframeSelector(
+            every_n_frames=1000, min_translation_m=2.0, min_rotation_deg=1e9
+        )
         selector.accept(0, np.eye(4))
         near = se3_from_rt(np.eye(3), np.array([0.0, 0.0, 1.5]))
         far = se3_from_rt(np.eye(3), np.array([0.0, 0.0, 2.5]))
@@ -78,7 +80,9 @@ class TestKeyframeSelector:
         assert selector.should_select(2, far)
 
     def test_rotation_triggers_before_the_interval(self):
-        selector = KeyframeSelector(every_n_frames=1000, min_translation_m=1e9, min_rotation_deg=10.0)
+        selector = KeyframeSelector(
+            every_n_frames=1000, min_translation_m=1e9, min_rotation_deg=10.0
+        )
         selector.accept(0, np.eye(4))
         small = se3_from_rt(Rotation.from_euler("y", 5, degrees=True).as_matrix(), np.zeros(3))
         large = se3_from_rt(Rotation.from_euler("y", 15, degrees=True).as_matrix(), np.zeros(3))

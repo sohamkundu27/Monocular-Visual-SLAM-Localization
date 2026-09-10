@@ -15,8 +15,8 @@ from monocular_slam.reporting import (
     load_run_summaries,
     measured_highlights,
     render_resume_metrics,
-    resume_bullets,
     results_table,
+    resume_bullets,
     update_readme_results,
     write_resume_metrics,
 )

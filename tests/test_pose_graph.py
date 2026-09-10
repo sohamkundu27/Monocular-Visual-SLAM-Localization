@@ -6,9 +6,9 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
-from conftest import random_se3
 from scipy.spatial.transform import Rotation
 
+from conftest import random_se3
 from monocular_slam.geometry.pose import Trajectory
 from monocular_slam.geometry.transforms import (
     invert_se3,

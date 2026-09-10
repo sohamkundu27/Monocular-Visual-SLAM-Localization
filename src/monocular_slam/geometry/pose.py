@@ -204,7 +204,9 @@ class Trajectory:
         lookup = {int(f): i for i, f in enumerate(self.frame_ids)}
         missing = [int(f) for f in wanted if int(f) not in lookup]
         if missing:
-            raise KeyError(f"Trajectory is missing {len(missing)} requested frames, e.g. {missing[:5]}")
+            raise KeyError(
+                f"Trajectory is missing {len(missing)} requested frames, e.g. {missing[:5]}"
+            )
         idx = np.array([lookup[int(f)] for f in wanted], dtype=np.int64)
         return self[idx]  # type: ignore[return-value]
 

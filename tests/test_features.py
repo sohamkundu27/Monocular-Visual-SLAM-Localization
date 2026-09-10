@@ -5,8 +5,8 @@ from __future__ import annotations
 import cv2
 import numpy as np
 import pytest
-from kitti_fixture import make_textured_image
 
+from kitti_fixture import make_textured_image
 from monocular_slam.config import Config
 from monocular_slam.features.detector import FeatureDetector, Frame, draw_keypoints
 from monocular_slam.features.matcher import FeatureMatcher, MatchResult, draw_matches

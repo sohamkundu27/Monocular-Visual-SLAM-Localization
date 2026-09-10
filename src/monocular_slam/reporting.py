@@ -236,7 +236,6 @@ def resume_bullets(summaries: list[RunSummary]) -> list[str]:
 
     # Bullet 1: the system and its front-end scale.
     rates = [s.successful_pose_rate_pct for s in summaries if s.successful_pose_rate_pct]
-    features = [s.avg_features_per_frame for s in summaries if s.avg_features_per_frame]
     parts = [
         "Built a monocular visual SLAM system in Python (OpenCV, GTSAM) implementing ORB "
         "feature tracking, MAGSAC++ essential-matrix pose estimation, bag-of-words loop "

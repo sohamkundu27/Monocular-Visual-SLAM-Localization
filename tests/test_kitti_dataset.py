@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from kitti_fixture import CALIB_TEXT, KITTI_00_CX, KITTI_00_CY, KITTI_00_FX, write_kitti_sequence
 
+from kitti_fixture import CALIB_TEXT, KITTI_00_CX, KITTI_00_CY, KITTI_00_FX, write_kitti_sequence
 from monocular_slam.datasets.calibration import (
     CalibrationError,
     CameraCalibration,

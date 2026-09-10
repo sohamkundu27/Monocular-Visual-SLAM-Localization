@@ -34,8 +34,8 @@ therefore resolves to one of three outcomes, all recorded in the diagnostics:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Callable
 
 import numpy as np
 
@@ -127,7 +127,9 @@ class OdometryResult:
         return 100.0 * self.n_successful / self.n_transitions if self.n_transitions else 0.0
 
     def _mean(self, attribute: str, only_successful: bool = False) -> float:
-        source = [d for d in self.diagnostics if d.succeeded] if only_successful else self.diagnostics
+        source = (
+            [d for d in self.diagnostics if d.succeeded] if only_successful else self.diagnostics
+        )
         values = [getattr(d, attribute) for d in source]
         values = [v for v in values if v is not None and np.isfinite(v)]
         return float(np.mean(values)) if values else float("nan")
@@ -413,7 +415,9 @@ class VisualOdometry:
                     self.timer.fps(i + 1),
                 )
 
-        trajectory = Trajectory(np.stack(poses), frame_ids=dataset.frame_ids, timestamps=dataset.timestamps)
+        trajectory = Trajectory(
+            np.stack(poses), frame_ids=dataset.frame_ids, timestamps=dataset.timestamps
+        )
         result = OdometryResult(
             trajectory=trajectory,
             diagnostics=diagnostics,

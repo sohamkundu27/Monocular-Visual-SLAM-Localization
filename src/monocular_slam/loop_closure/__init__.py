@@ -7,9 +7,9 @@ from monocular_slam.loop_closure.database import (
     VisualVocabulary,
 )
 from monocular_slam.loop_closure.detector import (
+    LoopCandidate,
     LoopClosure,
     LoopClosureDetector,
-    LoopCandidate,
 )
 
 __all__ = [

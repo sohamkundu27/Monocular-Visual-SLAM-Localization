@@ -38,7 +38,7 @@ import numpy as np
 
 from monocular_slam.geometry.pose import Trajectory
 from monocular_slam.geometry.transforms import project_to_se3
-from monocular_slam.optimization.pose_graph import LoopEdge, PoseGraph
+from monocular_slam.optimization.pose_graph import PoseGraph
 from monocular_slam.utils.logging import get_logger
 from monocular_slam.utils.timing import StageTimer
 
@@ -136,7 +136,9 @@ def pose3_to_numpy(pose) -> np.ndarray:
     return np.asarray(pose.matrix(), dtype=np.float64)
 
 
-def _noise_model(sigma_rot: float, sigma_trans: float, robust: bool = False, huber_k: float = 1.345):
+def _noise_model(
+    sigma_rot: float, sigma_trans: float, robust: bool = False, huber_k: float = 1.345
+):
     """Build a diagonal (optionally Huber-robust) 6-dof noise model.
 
     Sigma ordering is rotation-then-translation to match ``Pose3``'s tangent

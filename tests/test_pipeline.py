@@ -13,11 +13,9 @@ import json
 
 import numpy as np
 import pytest
-from kitti_fixture import write_kitti_sequence
-from synthetic import straight_drive
 
+from kitti_fixture import write_kitti_sequence
 from monocular_slam.config import Config
-from monocular_slam.datasets.kitti import KittiOdometryDataset
 from monocular_slam.geometry.pose import Trajectory
 from monocular_slam.geometry.transforms import invert_se3, se3_from_rt
 from monocular_slam.pipeline import (
@@ -27,6 +25,7 @@ from monocular_slam.pipeline import (
     run_pipeline,
     write_outputs,
 )
+from synthetic import straight_drive
 
 
 @pytest.fixture

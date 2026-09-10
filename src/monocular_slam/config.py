@@ -244,7 +244,9 @@ class EvaluationConfig:
     #: Frame gaps (in frames) used for relative pose error.
     rpe_deltas: tuple[int, ...] = (1, 10, 100)
     #: Sub-trajectory lengths in metres for the KITTI-style drift metric.
-    drift_segment_lengths_m: tuple[float, ...] = (100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0)
+    drift_segment_lengths_m: tuple[float, ...] = (
+        100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0,
+    )
 
 
 @dataclass
@@ -309,7 +311,9 @@ class Config:
         return cls.from_dict(data)
 
     @classmethod
-    def load(cls, path: Path | str | None = None, overrides: dict[str, Any] | None = None) -> Config:
+    def load(
+        cls, path: Path | str | None = None, overrides: dict[str, Any] | None = None
+    ) -> Config:
         """Load ``path`` (or defaults) and apply dotted-key ``overrides``."""
         config = cls.from_yaml(path) if path is not None else cls()
         if overrides:

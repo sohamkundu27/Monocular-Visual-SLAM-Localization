@@ -9,7 +9,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
-from synthetic import straight_drive
 
 from monocular_slam.evaluation.metrics import (
     absolute_trajectory_error,
@@ -20,6 +19,7 @@ from monocular_slam.evaluation.metrics import (
 )
 from monocular_slam.geometry.pose import Trajectory
 from monocular_slam.geometry.transforms import se3_from_rt
+from synthetic import straight_drive
 
 
 @pytest.fixture

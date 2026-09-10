@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from conftest import random_se3, small_se3
 from scipy.spatial.transform import Rotation
 
+from conftest import random_se3, small_se3
 from monocular_slam.geometry.pose import Trajectory
 from monocular_slam.geometry.transforms import (
     relative_pose,

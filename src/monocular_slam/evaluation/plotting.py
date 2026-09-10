@@ -68,8 +68,13 @@ def plot_trajectory(
             reference.xz[:, 0], reference.xz[:, 1],
             color=COLOR_GT, linewidth=2.0, label="Ground truth", zorder=2,
         )
-    ax.plot(trajectory.xz[:, 0], trajectory.xz[:, 1], color=color, linewidth=1.6, label=label, zorder=3)
-    ax.scatter(*trajectory.xz[0], marker="o", s=70, color=COLOR_OPTIMIZED, zorder=5, label="Start")
+    ax.plot(
+        trajectory.xz[:, 0], trajectory.xz[:, 1],
+        color=color, linewidth=1.6, label=label, zorder=3,
+    )
+    ax.scatter(
+        *trajectory.xz[0], marker="o", s=70, color=COLOR_OPTIMIZED, zorder=5, label="Start"
+    )
     ax.scatter(*trajectory.xz[-1], marker="s", s=70, color=COLOR_ACCENT, zorder=5, label="End")
     _setup_topdown(ax)
     return _finish(fig, ax, Path(path), dpi, title)
@@ -96,7 +101,9 @@ def plot_trajectory_comparison(
             color=palette[i % len(palette)], linewidth=1.6, label=label, zorder=3 + i,
         )
     if reference is not None:
-        ax.scatter(*reference.xz[0], marker="o", s=80, color=COLOR_OPTIMIZED, zorder=6, label="Start")
+        ax.scatter(
+            *reference.xz[0], marker="o", s=80, color=COLOR_OPTIMIZED, zorder=6, label="Start"
+        )
     _setup_topdown(ax)
     return _finish(fig, ax, Path(path), dpi, title)
 
@@ -122,7 +129,10 @@ def plot_trajectory_3d(
     palette = [COLOR_RAW, COLOR_OPTIMIZED, COLOR_LOOP, COLOR_ACCENT]
     for i, (label, trajectory) in enumerate(trajectories.items()):
         p = trajectory.positions
-        ax.plot(p[:, 0], p[:, 2], -p[:, 1], color=palette[i % len(palette)], linewidth=1.4, label=label)
+        ax.plot(
+            p[:, 0], p[:, 2], -p[:, 1],
+            color=palette[i % len(palette)], linewidth=1.4, label=label,
+        )
 
     ax.set_xlabel("x [m]")
     ax.set_ylabel("z [m]")

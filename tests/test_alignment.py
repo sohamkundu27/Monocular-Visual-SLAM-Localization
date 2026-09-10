@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from conftest import random_se3
 from scipy.spatial.transform import Rotation
 
+from conftest import random_se3
 from monocular_slam.evaluation.alignment import (
     AlignmentResult,
     align_trajectory,
@@ -120,7 +120,10 @@ class TestTrajectoryAlignment:
 
     def test_sim3_recovers_a_scaled_rotated_trajectory(self, reference):
         """The classic monocular case: right shape, wrong scale and frame."""
-        T = se3_from_rt(Rotation.from_euler("y", 47, degrees=True).as_matrix(), np.array([5.0, 0.0, -3.0]))
+        T = se3_from_rt(
+            Rotation.from_euler("y", 47, degrees=True).as_matrix(),
+            np.array([5.0, 0.0, -3.0]),
+        )
         distorted = reference.transformed(T, scale=0.35)
         aligned, result = align_trajectory(distorted, reference, mode="sim3")
         assert result.scale == pytest.approx(1 / 0.35, rel=1e-6)

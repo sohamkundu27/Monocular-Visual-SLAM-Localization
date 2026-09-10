@@ -13,8 +13,8 @@ downstream needs to know which detector ran.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 import cv2
 import numpy as np
@@ -199,7 +199,10 @@ class FeatureDetector:
         keypoints, descriptors = self._detector.detectAndCompute(prepared, mask)
 
         if keypoints is None or len(keypoints) == 0:
-            logger.warning("No keypoints detected in frame %s", frame_id if frame_id is not None else index)
+            logger.warning(
+                "No keypoints detected in frame %s",
+                frame_id if frame_id is not None else index,
+            )
             return Frame(index=index, frame_id=index if frame_id is None else frame_id,
                          keypoints=(), descriptors=None)
 
@@ -246,9 +249,6 @@ def draw_keypoints(
     ``rich=True`` draws size and orientation, which is the quickest way to spot
     a detector configured with the wrong pyramid or patch size.
     """
-    if image.ndim == 2:
-        canvas = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-    else:
-        canvas = image.copy()
+    canvas = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR) if image.ndim == 2 else image.copy()
     flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS if rich else cv2.DRAW_MATCHES_FLAGS_DEFAULT
     return cv2.drawKeypoints(canvas, list(frame.keypoints), None, color=color, flags=flags)

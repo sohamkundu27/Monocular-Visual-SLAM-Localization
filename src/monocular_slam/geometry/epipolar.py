@@ -414,7 +414,9 @@ def select_two_view_model(
 
     sigma_sq = float(threshold_px) ** 2
 
-    H, _ = cv2.findHomography(points_a, points_b, method=cv2.RANSAC, ransacReprojThreshold=threshold_px)
+    H, _ = cv2.findHomography(
+        points_a, points_b, method=cv2.RANSAC, ransacReprojThreshold=threshold_px
+    )
     score_h = 0.0 if H is None else _score_homography(H, points_a, points_b, sigma_sq)
 
     K = np.asarray(K, dtype=np.float64)

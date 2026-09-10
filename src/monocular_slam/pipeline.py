@@ -133,7 +133,8 @@ class SlamPipeline:
         # -- Stages 2-3: loop closure ---------------------------------- #
         loop_closures: list[LoopClosure] = []
         loop_stats: dict[str, object] = {}
-        if config.loop_closure.enabled and len(database) > config.loop_closure.min_keyframe_separation:
+        min_separation = config.loop_closure.min_keyframe_separation
+        if config.loop_closure.enabled and len(database) > min_separation:
             loop_closures, loop_stats = self._detect_loops(config, dataset, vo, database)
         elif config.loop_closure.enabled:
             logger.warning(
@@ -284,7 +285,9 @@ class _KeyframeHarvester:
     the path-separation loop-closure filter exact even when frames are dropped.
     """
 
-    def __init__(self, database: KeyframeDatabase, selector: KeyframeSelector, enabled: bool = True):
+    def __init__(
+        self, database: KeyframeDatabase, selector: KeyframeSelector, enabled: bool = True
+    ):
         self.database = database
         self.selector = selector
         self.enabled = enabled

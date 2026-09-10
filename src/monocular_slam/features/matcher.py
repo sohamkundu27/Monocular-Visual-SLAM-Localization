@@ -103,7 +103,10 @@ class MatchResult:
         )
 
     def __repr__(self) -> str:
-        return f"MatchResult(matches={len(self)}, raw={self.n_raw}, mean_dist={self.mean_distance:.1f})"
+        return (
+            f"MatchResult(matches={len(self)}, raw={self.n_raw}, "
+            f"mean_dist={self.mean_distance:.1f})"
+        )
 
 
 class FeatureMatcher:
@@ -313,5 +316,7 @@ def draw_matches(
     label = f"{n} matches"
     if inlier_mask is not None:
         label += f" | {int(np.count_nonzero(inlier_mask))} inliers"
-    cv2.putText(canvas, label, (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(
+        canvas, label, (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA
+    )
     return canvas

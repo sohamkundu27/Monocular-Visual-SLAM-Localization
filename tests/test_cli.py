@@ -7,8 +7,8 @@ import logging
 
 import numpy as np
 import pytest
-from kitti_fixture import write_kitti_sequence
 
+from kitti_fixture import write_kitti_sequence
 from monocular_slam.cli.common import _parse_scalar, config_from_args
 from monocular_slam.cli.evaluate import build_parser as evaluate_parser
 from monocular_slam.cli.evaluate import main as evaluate_main
@@ -169,7 +169,9 @@ class TestEndToEndCLI:
 
     def test_max_frames_is_honoured(self, fast_config_file, tmp_path):
         out_dir = tmp_path / "short"
-        slam_main(["-c", str(fast_config_file), "-s", "00", "-o", str(out_dir), "--max-frames", "8"])
+        slam_main(
+            ["-c", str(fast_config_file), "-s", "00", "-o", str(out_dir), "--max-frames", "8"]
+        )
         metrics = json.loads((out_dir / "metrics.json").read_text(encoding="utf-8"))
         assert metrics["frames"] == 8
 
@@ -182,7 +184,9 @@ class TestEndToEndCLI:
         assert slam_main(["-c", "/nonexistent.yaml"]) == 2
         assert "Configuration error" in capsys.readouterr().err
 
-    def test_evaluate_scores_a_saved_trajectory(self, fast_config_file, tmp_path, kitti_root, capsys):
+    def test_evaluate_scores_a_saved_trajectory(
+        self, fast_config_file, tmp_path, kitti_root, capsys
+    ):
         out_dir = tmp_path / "slam_out"
         slam_main(["-c", str(fast_config_file), "-s", "00", "-o", str(out_dir)])
 

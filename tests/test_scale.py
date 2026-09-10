@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from kitti_fixture import write_kitti_sequence
 
+from kitti_fixture import write_kitti_sequence
 from monocular_slam.config import Config
 from monocular_slam.datasets.kitti import KittiOdometryDataset
 from monocular_slam.odometry.scale import (

@@ -107,7 +107,8 @@ class TestValidation:
 class TestCoercion:
     @pytest.mark.parametrize("value,expected", [("true", True), ("no", False), (True, True)])
     def test_boolean_coercion(self, value, expected):
-        assert Config.from_dict({"loop_closure": {"enabled": value}}).loop_closure.enabled is expected
+        config = Config.from_dict({"loop_closure": {"enabled": value}})
+        assert config.loop_closure.enabled is expected
 
     def test_bad_boolean_is_rejected(self):
         with pytest.raises(ConfigError, match="expects a boolean"):

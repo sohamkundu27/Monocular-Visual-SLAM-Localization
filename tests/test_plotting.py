@@ -11,7 +11,6 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-from synthetic import straight_drive
 
 from monocular_slam.evaluation.plotting import (
     plot_diagnostics,
@@ -23,6 +22,7 @@ from monocular_slam.evaluation.plotting import (
 )
 from monocular_slam.geometry.pose import Trajectory
 from monocular_slam.odometry.visual_odometry import FrameDiagnostics
+from synthetic import straight_drive
 
 
 @pytest.fixture
