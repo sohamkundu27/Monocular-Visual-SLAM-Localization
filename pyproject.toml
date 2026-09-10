@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "monocular-slam"
+version = "0.1.0"
+description = "Classical monocular visual SLAM and localization on KITTI Odometry"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Soham Kundu" }]
+keywords = ["slam", "visual-odometry", "kitti", "robotics", "computer-vision", "gtsam"]
+
+# NOTE ON PINS: gtsam 4.2.2 wheels are built against the NumPy 1.x ABI, so the
+# whole stack is held below NumPy 2.0. OpenCV 4.8+ works fine under NumPy 1.26.
+dependencies = [
+    "numpy>=1.24,<2.0",
+    "opencv-python>=4.8",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "PyYAML>=6.0",
+    "gtsam>=4.2,<4.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+
+[project.scripts]
+run-vo = "monocular_slam.cli.run_vo:main"
+run-slam = "monocular_slam.cli.run_slam:main"
+
+[project.urls]
+Repository = "https://github.com/sohamkundu27/Monocular-Visual-SLAM-Localization"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests", "scripts"]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "C4", "SIM"]
+ignore = ["B008"]
