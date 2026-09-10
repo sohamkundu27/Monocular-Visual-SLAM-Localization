@@ -207,6 +207,9 @@ class PoseGraph:
         """
         if not self.nodes:
             return True
+        if not 0 <= self.prior_node_id < len(self.nodes):
+            # Nothing is reachable from an anchor that does not exist.
+            return False
         adjacency: dict[int, list[int]] = {node.node_id: [] for node in self.nodes}
         for edge in self.edges:
             adjacency[edge.from_id].append(edge.to_id)
