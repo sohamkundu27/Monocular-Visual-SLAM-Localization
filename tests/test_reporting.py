@@ -250,6 +250,44 @@ class TestReadmeInjection:
         assert "<!-- RESULTS:END -->" in text
 
 
+class TestRegressionReporting:
+    """Sequences where optimization hurt must be reported, not quietly dropped."""
+
+    REGRESSED = {
+        **FULL_METRICS,
+        "sequence": "01",
+        "ate_rmse_raw_m": 16.2,
+        "ate_rmse_optimized_m": 17.7,
+        "ate_reduction_pct": -9.0,
+        "loop_closures_detected": 1,
+    }
+
+    def test_regression_is_called_out(self, tmp_path):
+        write_run(tmp_path, "01", self.REGRESSED)
+        document = render_resume_metrics(load_run_summaries(tmp_path))
+        assert "Where it does not help" in document
+        assert "Sequence 01" in document
+        assert "-9.0%" in document
+
+    def test_no_note_when_everything_improved(self, tmp_path):
+        write_run(tmp_path, "00", FULL_METRICS)
+        assert "Where it does not help" not in render_resume_metrics(load_run_summaries(tmp_path))
+
+    def test_highlights_still_use_the_best_run(self, tmp_path):
+        write_run(tmp_path, "00", FULL_METRICS)
+        write_run(tmp_path, "01", self.REGRESSED)
+        summaries = load_run_summaries(tmp_path)
+        joined = " ".join(measured_highlights(summaries))
+        assert "60.0%" in joined  # the sequence-00 improvement, not the regression
+        assert "-9.0" not in joined
+
+    def test_readme_block_also_carries_the_note(self, tmp_path):
+        from monocular_slam.reporting import render_readme_results
+
+        write_run(tmp_path, "01", self.REGRESSED)
+        assert "Where it does not help" in render_readme_results(load_run_summaries(tmp_path))
+
+
 class TestFigurePublishing:
     def test_copies_known_figures(self, tmp_path):
         run_dir = write_run(tmp_path, "00", FULL_METRICS)
@@ -286,11 +324,14 @@ class TestFigurePublishing:
         assert "![" in block
         assert "trajectory_comparison.png" in block
 
-    def test_readme_points_at_the_command_when_nothing_is_published(self, tmp_path):
-        write_run(tmp_path, "00", FULL_METRICS)
-        from monocular_slam.reporting import render_readme_results
+    def test_readme_points_at_the_command_when_nothing_is_published(self, tmp_path, monkeypatch):
+        import monocular_slam.reporting as reporting
 
-        block = render_readme_results(load_run_summaries(tmp_path))
+        write_run(tmp_path, "00", FULL_METRICS)
+        # Point at an empty directory: the repository's real docs/results/ may
+        # already hold published figures from a benchmark run.
+        monkeypatch.setattr(reporting, "FIGURE_DIR", tmp_path / "empty")
+        block = reporting.render_readme_results(load_run_summaries(tmp_path))
         assert "--publish-figures" in block
 
 

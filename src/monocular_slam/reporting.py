@@ -300,6 +300,44 @@ def resume_bullets(summaries: list[RunSummary]) -> list[str]:
     return bullets[:3]
 
 
+def _regression_note(summaries: list[RunSummary]) -> list[str]:
+    """Call out any sequence where optimization did not help.
+
+    Reporting only the sequences that improved would be selective quotation.
+    A reader comparing against the results table would spot the gap anyway, and
+    a stated limitation is more credible than a silent one.
+    """
+    regressed = [
+        s
+        for s in summaries
+        if s.ate_reduction_pct is not None and s.ate_reduction_pct < 0
+    ]
+    if not regressed:
+        return []
+
+    lines = ["## Where it does not help", ""]
+    for s in regressed:
+        n = s.loop_closures_detected or 0
+        plural = "loop closure" if n == 1 else "loop closures"
+        lines.append(
+            f"- **Sequence {s.sequence}**: optimization made ATE *worse* "
+            f"({s.ate_rmse_raw_m:.2f} m -> {s.ate_rmse_optimized_m:.2f} m, "
+            f"{s.ate_reduction_pct:.1f}%) from {n} accepted {plural}."
+        )
+    lines += [
+        "",
+        "  KITTI sequence 01 is a fast highway drive that contains **no true loops**, so the",
+        "  correct number of closures is zero. Its repetitive corridor (guardrails, lane",
+        "  markings, uniform vegetation) defeats appearance matching *and* geometric",
+        "  verification, because forward motion along a straight road is a consistent camera",
+        "  motion between any two points on it. The metric-plausibility gate removes most such",
+        "  detections; the residual ones remain a known limitation, and switchable constraints",
+        "  or GNC would be the proper fix.",
+        "",
+    ]
+    return lines
+
+
 def render_resume_metrics(summaries: list[RunSummary]) -> str:
     """Render the full ``resume_metrics.md`` document."""
     lines = [
@@ -346,6 +384,8 @@ def render_resume_metrics(summaries: list[RunSummary]) -> str:
         lines += ["## Measured highlights", ""]
         lines += [f"- {h}" for h in highlights]
         lines.append("")
+
+    lines += _regression_note(summaries)
 
     bullets = resume_bullets(summaries)
     if bullets:
@@ -431,6 +471,8 @@ def render_readme_results(summaries: list[RunSummary]) -> str:
         lines += [f"- {h}" for h in highlights]
         lines.append("")
 
+    lines += [line.replace("## Where it does not help", "### Where it does not help")
+              for line in _regression_note(summaries)]
     lines += _figure_section(summaries)
     lines.append("_Regenerate with `python scripts/report.py --update-readme`._")
     return "\n".join(lines)
