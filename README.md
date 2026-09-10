@@ -26,6 +26,7 @@ delegated to an existing SLAM framework.
   - [5. Loop closure detection](#5-loop-closure-detection)
   - [6. Pose-graph optimization](#6-pose-graph-optimization)
 - [Evaluation on KITTI](#evaluation-on-kitti)
+- [Performance](#performance)
 - [Results](#results)
 - [Installation](#installation)
 - [Dataset setup](#dataset-setup)
@@ -261,7 +262,9 @@ Vocabulary size was chosen by measuring true-loop retrieval on KITTI sequence 00
 5. **Geometric verification** — a robust essential matrix must fit those correspondences with
    enough inliers and a high enough inlier ratio. A false positive from perceptual aliasing
    will match descriptors but will not admit a single consistent camera motion.
-6. **Cooldown** — after acceptance, detection pauses briefly so one revisit does not generate a
+6. **Metric plausibility** — the recovered translation magnitude (below) must be small enough
+   for the two keyframes to genuinely be the same place.
+7. **Cooldown** — after acceptance, detection pauses briefly so one revisit does not generate a
    burst of near-duplicate constraints.
 
 **Recovering the loop translation magnitude.** The essential matrix gives the loop's rotation
@@ -282,9 +285,29 @@ The magnitude is instead recovered from **shared scene structure**:
 3. For features seen in all three views, `s = depth_metric / depth_unit`. A trimmed median
    over those ratios is the estimate.
 
-Loops whose scale cannot be recovered are kept, but with a heavily inflated translation sigma
-so they act as **orientation-only** constraints — the rotation is well determined and heading
-drift is the dominant error term, so the constraint is still worth having.
+**The recovered magnitude is also the strongest false-positive filter.** Geometric verification
+cannot catch every look-alike: on a repetitive corridor — a highway with guardrails, lane
+markings and uniform vegetation — two points 80 m apart look alike *and* admit a perfectly
+consistent camera motion, because "straight road ahead" is a valid relative pose. Appearance
+and geometry both say yes. On KITTI sequence 01 that produced nine confident detections whose
+true separation was 73–108 m, and feeding them to the optimizer made ATE 29% *worse*.
+
+The recovered magnitude breaks the tie, because a genuine revisit puts the camera within a few
+metres of where it was:
+
+| | True separation | Recovered magnitude |
+|---|---|---|
+| **True loops** (sequences 00, 05) | 0.3 – 14.3 m (median 1.2 m) | **0.12 – 8.58 m** |
+| **False positives** (sequence 01) | 73.5 – 108.5 m | **12.9 – 27.4 m** |
+
+The two populations do not overlap, so `max_loop_scale_m` (10 m) is a *physical plausibility*
+gate rather than a numerical sanity bound. By the same reasoning, a loop whose magnitude
+cannot be measured at all is one that cannot be confirmed as a revisit, so it is rejected by
+default; setting `require_measured_scale: false` instead keeps it as an orientation-only
+constraint with a heavily inflated translation sigma.
+
+Note also how well the recovery itself works: on sequence 05 the estimates track ground truth
+almost exactly (0.4 ↔ 0.3, 1.7 ↔ 1.7, 0.8 ↔ 0.7, 1.4 ↔ 1.4 m).
 
 *Implementation:* [`loop_closure/database.py`](src/monocular_slam/loop_closure/database.py),
 [`loop_closure/detector.py`](src/monocular_slam/loop_closure/detector.py)
@@ -389,6 +412,37 @@ error between two similar trajectories.
 
 *Implementation:* [`evaluation/metrics.py`](src/monocular_slam/evaluation/metrics.py),
 [`evaluation/alignment.py`](src/monocular_slam/evaluation/alignment.py)
+
+---
+
+### Performance
+
+Every run is instrumented per stage with `time.perf_counter`; the totals land in
+`metrics.json` under `timing.stages` and are printed to `run.log`. The overhead is two clock
+reads per call, negligible against ~7 ms of ORB detection, so instrumentation is always on
+rather than behind a flag.
+
+Measured on the full KITTI sequence 00 run (4541 frames, single CPU core):
+
+| Stage | Total | Per call | Calls |
+|---|---:|---:|---:|
+| Pose estimation (MAGSAC++ E-matrix, decomposition, model selection) | 120.8 s | 26.6 ms | 4540 |
+| Loop detection (re-match + verify candidates) | 86.2 s | — | 1 pass |
+| Descriptor matching | 40.8 s | 9.0 ms | 4540 |
+| ORB detection | 33.9 s | 7.5 ms | 4541 |
+| Vocabulary training (binary k-means, 1024 words) | 17.5 s | — | 1 |
+| BoW index construction | 9.0 s | — | 1 |
+| **Pose-graph optimization (GTSAM LM, 1595 nodes)** | **0.08 s** | — | 1 |
+
+Two things stand out. The back end is essentially free — 79 ms to optimize a 1595-node graph,
+against roughly five minutes of front-end work; a pose graph is a far cheaper object than the
+images that produced it. And pose estimation, not feature extraction, dominates: MAGSAC++
+buys its 4× accuracy improvement at roughly 3× the cost of plain RANSAC, which is a trade
+worth making when drift compounds over thousands of frames.
+
+The obvious remaining bottleneck is loop-closure verification, which re-matches full
+descriptor sets for every surviving candidate. A hierarchical vocabulary with a direct index
+would prune most of those before matching.
 
 ---
 
