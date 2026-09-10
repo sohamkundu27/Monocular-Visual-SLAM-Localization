@@ -134,8 +134,9 @@ the essential-matrix estimate is usable at all:
 | **Mutual consistency** (cross-check) | Keeps only mutual nearest neighbours. Applied manually, since OpenCV forbids `crossCheck` together with `knnMatch`. |
 | **Absolute distance ceiling** | Rejects matches that pass the relative tests but are simply poor. |
 
-On KITTI sequence 00 this reduces ~3000 keypoints per frame to ~900 correspondences, of which
-roughly 68% survive as epipolar inliers.
+Measured on the full KITTI sequence 00 run: 2980 keypoints per frame on average survive into
+1122 filtered correspondences per pair, of which 66.6% become epipolar inliers (751 per pair),
+and 91.3% of those inliers then pass the cheirality test.
 
 *Implementation:* [`features/matcher.py`](src/monocular_slam/features/matcher.py)
 

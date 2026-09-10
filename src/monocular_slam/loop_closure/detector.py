@@ -17,7 +17,11 @@ A loop closure is accepted only after passing every stage of this cascade:
    correspondences with enough inliers and a high enough inlier ratio. A false
    positive from perceptual aliasing will match descriptors but will not admit
    a single consistent camera motion.
-5. **Cooldown** — after an accepted loop, detection pauses briefly so one
+5. **Metric plausibility** — the recovered translation magnitude must be small
+   enough for the two keyframes to actually be the same place. See below; this
+   is what catches false positives on repetitive corridors, where appearance
+   and geometry both agree but the places are 80 m apart.
+6. **Cooldown** — after an accepted loop, detection pauses briefly so one
    revisit does not generate a burst of near-duplicate constraints.
 
 Recovering the loop translation magnitude
@@ -46,10 +50,28 @@ The magnitude is therefore recovered from **shared scene structure**
 3. For features seen in all three views, the ratio of metric to unit depth is
    ``s``. A robust median over those ratios is the estimate.
 
-If too few features are shared for a reliable ratio, the loop is still used but
-with a much looser translation sigma, so it constrains relative *orientation* —
-which is well determined and is the dominant drift term — without asserting a
-translation magnitude that was never measured.
+Why the recovered magnitude is also the best false-positive filter
+-----------------------------------------------------------------
+Geometric verification alone cannot catch every false positive. On a repetitive
+corridor — a highway with guardrails, lane markings and uniform vegetation —
+two points 80 m apart look alike *and* admit a perfectly consistent camera
+motion between them, because "straight road ahead" is a valid relative pose.
+Appearance and geometry both say yes; on KITTI sequence 01 that produced nine
+confident detections whose true separation was 73-108 m.
+
+The recovered translation magnitude breaks the tie, because a genuine revisit
+puts the camera within a few metres of where it was before. Measured across
+sequences 00 and 05, every true loop recovered a magnitude of 8.6 m or less
+(median 1.2 m), tracking the ground-truth separation closely; every sequence-01
+false positive recovered 12.9 m or more. ``max_loop_scale_m`` therefore acts as
+a physical plausibility gate, not just a numerical sanity bound.
+
+By the same logic, a loop whose magnitude cannot be measured at all is one that
+cannot be confirmed as a genuine revisit, so ``require_measured_scale`` rejects
+it by default. Setting that flag to ``False`` keeps such loops as
+orientation-only constraints (with a heavily inflated translation sigma), which
+is defensible when the front end is known to be rotation-limited, but on
+repetitive scenes it is exactly the case that lets false positives through.
 """
 
 from __future__ import annotations
@@ -91,7 +113,7 @@ class LoopClosure:
     similarity: float
     normalized_similarity: float
     #: ``T_match_query``: pose of the query keyframe in the matched keyframe's
-    #: frame, with a metric translation taken from odometry.
+    #: frame, with a metric translation recovered from shared structure.
     T_match_query: np.ndarray
     n_matches: int
     n_inliers: int
@@ -143,6 +165,8 @@ class LoopClosureStats:
     #: Loops accepted geometrically whose metric magnitude could not be
     #: recovered; these become orientation-only constraints.
     scale_estimation_failed: int = 0
+    #: Loops whose recovered magnitude was too large to be a revisit.
+    rejected_large_scale: int = 0
     accepted: int = 0
     match_counts: list[int] = field(default_factory=list, repr=False)
     inlier_counts: list[int] = field(default_factory=list, repr=False)
@@ -156,6 +180,7 @@ class LoopClosureStats:
             "rejected_geometry": self.rejected_geometry,
             "rejected_cooldown": self.rejected_cooldown,
             "scale_estimation_failed": self.scale_estimation_failed,
+            "rejected_large_scale": self.rejected_large_scale,
             "accepted": self.accepted,
             "mean_matches_per_candidate": (
                 round(float(np.mean(self.match_counts)), 1) if self.match_counts else None
@@ -191,7 +216,8 @@ class LoopClosureDetector:
         min_scale_baseline_m: float = 0.5,
         scale_neighbour_search: int = 5,
         min_loop_scale_m: float = 0.05,
-        max_loop_scale_m: float = 30.0,
+        max_loop_scale_m: float = 10.0,
+        require_measured_scale: bool = True,
         timer: StageTimer | None = None,
     ) -> None:
         self.K = np.asarray(K, dtype=np.float64)
@@ -216,6 +242,7 @@ class LoopClosureDetector:
         self.scale_neighbour_search = int(scale_neighbour_search)
         self.min_loop_scale_m = float(min_loop_scale_m)
         self.max_loop_scale_m = float(max_loop_scale_m)
+        self.require_measured_scale = bool(require_measured_scale)
         self.timer = timer if timer is not None else StageTimer()
         self.stats = LoopClosureStats()
 
@@ -243,6 +270,7 @@ class LoopClosureDetector:
             scale_neighbour_search=lc.scale_neighbour_search,
             min_loop_scale_m=lc.min_loop_scale_m,
             max_loop_scale_m=lc.max_loop_scale_m,
+            require_measured_scale=lc.require_measured_scale,
             timer=timer,
         )
 
@@ -346,6 +374,11 @@ class LoopClosureDetector:
         )
         if scale is None:
             self.stats.scale_estimation_failed += 1
+            if self.require_measured_scale:
+                # An unmeasurable magnitude means this pair cannot be confirmed
+                # as a genuine revisit -- the exact situation in which a
+                # look-alike slips past appearance and geometry alike.
+                return None
             scale_method = "unscaled"
             # Keep the direction but give it no asserted magnitude; the pose
             # graph will down-weight the translation for this edge.
@@ -451,7 +484,13 @@ class LoopClosureDetector:
         trimmed = ratios[(ratios >= low) & (ratios <= high)]
         scale = float(np.median(trimmed if len(trimmed) else ratios))
 
-        if not np.isfinite(scale) or not (self.min_loop_scale_m <= scale <= self.max_loop_scale_m):
+        if not np.isfinite(scale) or scale < self.min_loop_scale_m:
+            return None, int(valid.sum())
+        if scale > self.max_loop_scale_m:
+            # Physically implausible for a revisit: appearance matched a
+            # look-alike further along the same corridor. Counted separately
+            # because it is a different failure from "could not measure".
+            self.stats.rejected_large_scale += 1
             return None, int(valid.sum())
         return scale, int(valid.sum())
 

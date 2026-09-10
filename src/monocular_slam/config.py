@@ -200,10 +200,17 @@ class LoopClosureConfig:
     min_scale_baseline_m: float = 0.5
     #: How many keyframes back to search for that baseline.
     scale_neighbour_search: int = 5
-    #: Reject scale estimates outside this range (metres) as implausible for
-    #: two keyframes that appearance matching says are the same place.
+    #: Reject recovered loop magnitudes outside this range (metres). This is a
+    #: physical plausibility gate, not just numerical hygiene: measured across
+    #: KITTI 00 and 05 every true loop recovered <= 8.6 m, while the sequence-01
+    #: highway false positives recovered 12.9-27.4 m.
     min_loop_scale_m: float = 0.05
-    max_loop_scale_m: float = 30.0
+    max_loop_scale_m: float = 10.0
+    #: Reject loops whose magnitude could not be measured at all. A pair that
+    #: cannot be confirmed co-located is exactly where a look-alike slips past
+    #: appearance and geometry. Set False to keep them as orientation-only
+    #: constraints instead.
+    require_measured_scale: bool = True
 
 
 @dataclass

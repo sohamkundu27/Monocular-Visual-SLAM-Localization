@@ -79,7 +79,10 @@ loop_closure:
   min_scale_baseline_m: 0.5
   scale_neighbour_search: 5
   min_loop_scale_m: 0.05
-  max_loop_scale_m: 30.0
+  # Physical plausibility gate: true loops on KITTI 00/05 recover <= 8.6 m,
+  # highway false positives on 01 recover 12.9-27.4 m.
+  max_loop_scale_m: 10.0
+  require_measured_scale: true
 
 pose_graph:
   prior_sigma_rot: 0.0001

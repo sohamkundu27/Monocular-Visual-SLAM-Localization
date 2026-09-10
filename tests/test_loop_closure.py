@@ -381,17 +381,45 @@ class TestGeometricVerification:
         # True displacement is along +x in the match keyframe's frame.
         assert translation[0] / np.linalg.norm(translation) == pytest.approx(1.0, abs=0.1)
 
-    def test_unrecoverable_scale_degrades_to_an_orientation_only_constraint(self, loop_detector):
-        """With no metric neighbour, the loop is kept but asserts no magnitude."""
+    def test_unmeasurable_scale_is_rejected_by_default(self, loop_detector):
+        """A pair that cannot be confirmed co-located must not become a constraint."""
         db = self.synthetic_pair(forward_motion(3.0, yaw_deg=2.0))
-        # Only two keyframes exist and keyframe 0 is the loop match itself, so
-        # there is no independent neighbour to triangulate against.
         loop_detector.min_scale_points = 10_000  # force estimation to fail
+        candidate = LoopCandidate(query_id=1, match_id=0, similarity=0.9)
+        assert loop_detector.verify(db, candidate) is None
+        assert loop_detector.stats.scale_estimation_failed == 1
+
+    def test_unmeasurable_scale_can_be_kept_as_orientation_only(self, loop_detector):
+        """Opting out keeps the loop, but with no asserted magnitude."""
+        db = self.synthetic_pair(forward_motion(3.0, yaw_deg=2.0))
+        loop_detector.min_scale_points = 10_000
+        loop_detector.require_measured_scale = False
         closure = loop_detector.verify(db, LoopCandidate(query_id=1, match_id=0, similarity=0.9))
         assert closure is not None
         assert closure.scale_method == "unscaled"
         assert closure.scale_m == 0.0
-        assert loop_detector.stats.scale_estimation_failed == 1
+        assert closure.scale_is_measured is False
+
+    def test_implausibly_large_scale_is_rejected(self, loop_detector):
+        """The highway-aliasing case: a confident match between distant places.
+
+        Regression test for KITTI sequence 01, where nine detections passed
+        appearance and geometric verification despite a true separation of
+        73-108 m, because forward motion along a repetitive corridor is a
+        perfectly consistent camera motion.
+        """
+        db, true_separation = self.three_view_database(true_separation_m=6.0, drift_m=5.0)
+        loop_detector.max_loop_scale_m = 2.0  # below the true separation
+        candidate = LoopCandidate(query_id=2, match_id=0, similarity=0.9)
+        assert loop_detector.verify(db, candidate) is None
+        assert loop_detector.stats.rejected_large_scale == 1
+        del true_separation
+
+    def test_plausible_scale_is_accepted(self, loop_detector):
+        db, _ = self.three_view_database(true_separation_m=2.0, drift_m=15.0)
+        loop_detector.max_loop_scale_m = 10.0
+        assert loop_detector.verify(db, LoopCandidate(query_id=2, match_id=0, similarity=0.9))
+        assert loop_detector.stats.rejected_large_scale == 0
 
     def test_random_correspondences_are_rejected(self, loop_detector):
         """A false positive from perceptual aliasing must not survive geometry."""
