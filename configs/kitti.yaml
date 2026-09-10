@@ -39,6 +39,10 @@ odometry:
   min_inliers: 30
   min_inlier_ratio: 0.3
   max_rotation_deg: 30.0
+  min_parallax_deg: 0.0            # 0 = disabled
+  min_flow_px: 0.7                 # below this the vehicle is treated as stopped
+  homography_ratio_threshold: 0.45 # planar / pure-rotation degeneracy detector
+  reject_degenerate: false         # diagnostic by default, not a hard gate
   # Monocular VO recovers translation direction only. "ground_truth" takes the
   # per-frame translation magnitude from KITTI ground truth so trajectory SHAPE
   # and drift can be benchmarked. See the README section on scale ambiguity.

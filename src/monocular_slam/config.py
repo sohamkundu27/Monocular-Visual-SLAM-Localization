@@ -107,6 +107,22 @@ class OdometryConfig:
     min_inlier_ratio: float = 0.3
     #: Reject rotations larger than this between consecutive frames (degrees).
     max_rotation_deg: float = 30.0
+    #: Reject transitions whose rotation-compensated parallax is below this
+    #: (degrees). ``0`` disables. Note that parallax cannot detect pure
+    #: rotation on its own -- see ``homography_ratio_threshold``.
+    min_parallax_deg: float = 0.0
+    #: Treat a transition with less median optical flow than this as a
+    #: stationary camera and hold the previous pose instead of integrating
+    #: noise. KITTI vehicles stop at traffic lights in several sequences.
+    min_flow_px: float = 0.7
+    #: Homography-vs-essential model selection threshold. Above this, a
+    #: homography explains the matches as well as the epipolar model, meaning
+    #: the scene is planar or the motion is rotation-only.
+    homography_ratio_threshold: float = 0.45
+    #: Reject transitions flagged degenerate by model selection. Off by
+    #: default: on KITTI the road plane can dominate legitimately, and the
+    #: flag is more useful as a diagnostic than as a hard gate.
+    reject_degenerate: bool = False
     #: Scale strategy: ``"ground_truth"``, ``"constant"`` or ``"none"``.
     #: See :mod:`monocular_slam.odometry.scale` and the README section on
     #: monocular scale ambiguity.
