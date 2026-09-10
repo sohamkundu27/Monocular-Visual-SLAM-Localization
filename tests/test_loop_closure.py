@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from kitti_fixture import make_textured_image
 from scipy.spatial.transform import Rotation
-from synthetic import KITTI_K, forward_motion, two_view_correspondences
+from synthetic import KITTI_K, forward_motion, project, two_view_correspondences
 
 from monocular_slam.config import Config
 from monocular_slam.features.detector import FeatureDetector
@@ -284,6 +284,65 @@ class TestGeometricVerification:
         db.add(kf_b)
         return db
 
+    def three_view_database(self, true_separation_m=2.0, drift_m=15.0, n_points=500):
+        """A loop pair plus a metric neighbour, with drift in the stored poses.
+
+        Layout in the *true* world frame:
+
+        * ``match``   keyframe 0, at the origin,
+        * ``neighbour`` keyframe 1, one odometry step behind the query,
+        * ``query``   keyframe 2, ``true_separation_m`` from ``match``.
+
+        The stored poses of the neighbour and query carry ``drift_m`` of
+        accumulated error, exactly as a drifted trajectory would. Their
+        *relative* pose stays metric and correct, which is the information
+        odometry actually provides locally.
+        """
+        rng = np.random.default_rng(3)
+        points_world = np.column_stack(
+            [
+                rng.uniform(-12.0, 12.0, n_points),
+                rng.uniform(-3.0, 3.0, n_points),
+                rng.uniform(8.0, 45.0, n_points),
+            ]
+        )
+        descriptors = rng.integers(0, 256, size=(n_points, 32), dtype=np.uint8)
+
+        # True poses (camera-to-world).
+        T_match = np.eye(4)
+        T_query = se3_from_rt(np.eye(3), np.array([true_separation_m, 0.0, 0.0]))
+        T_neighbour = T_query @ se3_from_rt(np.eye(3), np.array([0.0, 0.0, -3.0]))
+
+        def observe(T_world_cam):
+            cam = invert_se3(T_world_cam)
+            points_cam = points_world @ cam[:3, :3].T + cam[:3, 3]
+            uv = project(points_cam)
+            return uv, points_cam[:, 2] > 1.0
+
+        uv_match, ok_m = observe(T_match)
+        uv_query, ok_q = observe(T_query)
+        uv_neighbour, ok_n = observe(T_neighbour)
+        keep = ok_m & ok_q & ok_n
+
+        # Stored poses: the query and its neighbour are displaced by drift, but
+        # keep the correct relative pose between them.
+        drift = se3_from_rt(np.eye(3), np.array([0.0, 0.0, drift_m]))
+        db = KeyframeDatabase()
+        db.add(make_keyframe(0, descriptors[keep], points=uv_match[keep], pose=T_match))
+        db.add(
+            make_keyframe(
+                1, descriptors[keep], points=uv_neighbour[keep],
+                pose=drift @ T_neighbour, distance=100.0,
+            )
+        )
+        db.add(
+            make_keyframe(
+                2, descriptors[keep], points=uv_query[keep],
+                pose=drift @ T_query, distance=103.0,
+            )
+        )
+        return db, true_separation_m
+
     def test_verifies_a_true_pair_and_recovers_the_motion(self, loop_detector):
         motion = forward_motion(3.0, yaw_deg=4.0)
         db = self.synthetic_pair(motion)
@@ -292,14 +351,43 @@ class TestGeometricVerification:
         assert closure.n_inliers >= 15
         assert rotation_angle_deg(closure.T_match_query[:3, :3].T @ motion[:3, :3]) < 2.0
 
-    def test_translation_magnitude_comes_from_odometry(self, loop_detector):
-        motion = forward_motion(3.0, yaw_deg=2.0)
-        db = self.synthetic_pair(motion)
+    def test_scale_is_recovered_from_structure_not_the_odometry_gap(self, loop_detector):
+        """Regression test for the bug that made optimization worse than raw VO.
+
+        Using the odometry gap between the two loop keyframes as the loop
+        translation magnitude bakes the accumulated drift into the constraint.
+        The magnitude must instead come from triangulated structure.
+        """
+        db, true_separation = self.three_view_database(true_separation_m=2.0, drift_m=15.0)
+        closure = loop_detector.verify(db, LoopCandidate(query_id=2, match_id=0, similarity=0.9))
+        assert closure is not None
+        assert closure.scale_method == "structure"
+        assert closure.n_scale_points >= 15
+
+        odometry_gap = float(np.linalg.norm((invert_se3(db[0].pose) @ db[2].pose)[:3, 3]))
+        assert odometry_gap > 14.0  # the drift really is in there
+        assert closure.scale_m == pytest.approx(true_separation, rel=0.15)
+        assert abs(closure.scale_m - odometry_gap) > 10.0
+
+    def test_recovered_translation_matches_the_true_displacement(self, loop_detector):
+        db, true_separation = self.three_view_database(true_separation_m=3.0, drift_m=20.0)
+        closure = loop_detector.verify(db, LoopCandidate(query_id=2, match_id=0, similarity=0.9))
+        translation = closure.T_match_query[:3, 3]
+        assert np.linalg.norm(translation) == pytest.approx(true_separation, rel=0.15)
+        # True displacement is along +x in the match keyframe's frame.
+        assert translation[0] / np.linalg.norm(translation) == pytest.approx(1.0, abs=0.1)
+
+    def test_unrecoverable_scale_degrades_to_an_orientation_only_constraint(self, loop_detector):
+        """With no metric neighbour, the loop is kept but asserts no magnitude."""
+        db = self.synthetic_pair(forward_motion(3.0, yaw_deg=2.0))
+        # Only two keyframes exist and keyframe 0 is the loop match itself, so
+        # there is no independent neighbour to triangulate against.
+        loop_detector.min_scale_points = 10_000  # force estimation to fail
         closure = loop_detector.verify(db, LoopCandidate(query_id=1, match_id=0, similarity=0.9))
-        odometry_gap = invert_se3(db[0].pose) @ db[1].pose
-        expected = float(np.linalg.norm(odometry_gap[:3, 3]))
-        assert closure.scale_m == pytest.approx(expected, rel=1e-9)
-        assert np.linalg.norm(closure.T_match_query[:3, 3]) == pytest.approx(expected, rel=1e-6)
+        assert closure is not None
+        assert closure.scale_method == "unscaled"
+        assert closure.scale_m == 0.0
+        assert loop_detector.stats.scale_estimation_failed == 1
 
     def test_random_correspondences_are_rejected(self, loop_detector):
         """A false positive from perceptual aliasing must not survive geometry."""
