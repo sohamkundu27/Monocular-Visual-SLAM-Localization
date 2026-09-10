@@ -176,14 +176,7 @@ class VisualVocabulary:
 
         if self.binary:
             bits = np.unpackbits(descriptors, axis=1).astype(np.float32)
-            # Hamming distance from a dot product: for bit vectors a and b,
-            # ||a - b||_1 == sum(a) + sum(b) - 2 * a.b
-            cross = bits @ self._centroid_bits.T
-            distances = (
-                bits.sum(axis=1, keepdims=True)
-                + self._centroid_bits.sum(axis=1)[None, :]
-                - 2.0 * cross
-            )
+            distances = _hamming_distances(bits, self._centroid_bits)
         else:
             data = descriptors.astype(np.float32)
             distances = (
@@ -199,6 +192,46 @@ class VisualVocabulary:
         return np.bincount(words, minlength=self.size).astype(np.float64)
 
 
+def _hamming_distances(bits: np.ndarray, centroid_bits: np.ndarray) -> np.ndarray:
+    """``(N, k)`` Hamming distances between unpacked bit vectors.
+
+    For 0/1 vectors ``a`` and ``b``, ``||a - b||_1 == sum(a) + sum(b) - 2 a.b``,
+    so the whole distance matrix reduces to one BLAS matrix product.
+    """
+    return (
+        bits.sum(axis=1, keepdims=True)
+        + centroid_bits.sum(axis=1)[None, :]
+        - 2.0 * (bits @ centroid_bits.T)
+    )
+
+
+def _kmeans_plusplus_binary(bits: np.ndarray, k: int, rng: np.random.Generator) -> np.ndarray:
+    """k-means++ seeding under Hamming distance.
+
+    Seeding matters more than it might appear: with uniformly random seeds,
+    k-means routinely converges to a local optimum that splits one true cluster
+    across two words while merging two others, which directly costs retrieval
+    precision. k-means++ picks each new centre with probability proportional to
+    its squared distance from the nearest existing centre, which spreads the
+    initial words out and largely removes that failure.
+    """
+    n = len(bits)
+    centres = np.empty((k, bits.shape[1]), dtype=np.float32)
+    centres[0] = bits[rng.integers(0, n)]
+
+    closest = _hamming_distances(bits, centres[:1]).ravel()
+    for i in range(1, k):
+        weights = closest**2
+        total = float(weights.sum())
+        if total <= 0:
+            # All remaining points coincide with a chosen centre.
+            centres[i] = bits[rng.integers(0, n)]
+        else:
+            centres[i] = bits[int(rng.choice(n, p=weights / total))]
+        closest = np.minimum(closest, _hamming_distances(bits, centres[i : i + 1]).ravel())
+    return centres
+
+
 def _binary_kmeans(
     descriptors: np.ndarray, k: int, iterations: int = 12, seed: int = 0
 ) -> np.ndarray:
@@ -206,24 +239,18 @@ def _binary_kmeans(
 
     Centroids are recomputed by majority vote per bit, which is the correct
     mean under Hamming distance and keeps centroids inside the binary space.
+    Euclidean k-means on the raw descriptor bytes would be meaningless, since
+    byte 0xFF and 0x00 differ by 8 bits but 255 units.
     """
     rng = np.random.default_rng(seed)
     bits = np.unpackbits(descriptors, axis=1).astype(np.float32)
-    n, n_bits = bits.shape
+    n = len(bits)
 
-    # k-means++ style seeding, simplified: pick distinct random descriptors.
-    initial = rng.choice(n, size=k, replace=False)
-    centroid_bits = bits[initial].copy()
+    centroid_bits = _kmeans_plusplus_binary(bits, k, rng)
 
     labels = np.zeros(n, dtype=np.int64)
     for iteration in range(iterations):
-        cross = bits @ centroid_bits.T
-        distances = (
-            bits.sum(axis=1, keepdims=True)
-            + centroid_bits.sum(axis=1)[None, :]
-            - 2.0 * cross
-        )
-        new_labels = np.argmin(distances, axis=1)
+        new_labels = np.argmin(_hamming_distances(bits, centroid_bits), axis=1)
         if iteration > 0 and np.array_equal(new_labels, labels):
             break
         labels = new_labels
@@ -231,15 +258,13 @@ def _binary_kmeans(
         for word in range(k):
             members = bits[labels == word]
             if len(members) == 0:
-                # Re-seed an empty cluster from a random descriptor so the
-                # vocabulary does not silently shrink.
+                # Re-seed an empty cluster so the vocabulary does not silently
+                # shrink below the requested size.
                 centroid_bits[word] = bits[rng.integers(0, n)]
             else:
                 centroid_bits[word] = (members.mean(axis=0) >= 0.5).astype(np.float32)
 
-    packed = np.packbits(centroid_bits.astype(np.uint8), axis=1)
-    del n_bits
-    return packed
+    return np.packbits(centroid_bits.astype(np.uint8), axis=1)
 
 
 class KeyframeDatabase:
@@ -352,7 +377,9 @@ class KeyframeDatabase:
         matrix = self.bow_matrix
         if not 0 <= query_id < len(matrix):
             raise IndexError(f"query_id {query_id} out of range (0..{len(matrix) - 1})")
-        return matrix @ matrix[query_id]
+        # Clipped because rounding can push a self-similarity fractionally past
+        # 1.0, which would otherwise leak into the normalised-similarity ratio.
+        return np.clip(matrix @ matrix[query_id], -1.0, 1.0)
 
     def query(
         self,
