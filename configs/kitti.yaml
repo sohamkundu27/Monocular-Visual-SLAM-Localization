@@ -72,6 +72,14 @@ loop_closure:
   min_inlier_ratio: 0.35
   cooldown_keyframes: 10
   max_loops: 0
+  # Loop translation magnitude is recovered by triangulating structure shared
+  # with a metrically-scaled odometry neighbour -- NOT from the odometry gap
+  # between the two loop keyframes, which is the accumulated drift itself.
+  min_scale_points: 15
+  min_scale_baseline_m: 0.5
+  scale_neighbour_search: 5
+  min_loop_scale_m: 0.05
+  max_loop_scale_m: 30.0
 
 pose_graph:
   prior_sigma_rot: 0.0001

@@ -189,6 +189,22 @@ class LoopClosureConfig:
     #: Cap on accepted loops (0 = unlimited); a safety valve for pathological runs.
     max_loops: int = 0
 
+    # -- Loop translation scale recovery -------------------------------- #
+    # A loop's translation direction comes from the essential matrix; its
+    # magnitude is recovered by triangulating structure shared with a
+    # metrically-scaled odometry neighbour. See loop_closure/detector.py.
+    #: Minimum tri-view features required to trust a scale estimate.
+    min_scale_points: int = 15
+    #: Minimum odometry baseline (m) to the neighbour keyframe used for
+    #: metric triangulation; too small and there is no usable parallax.
+    min_scale_baseline_m: float = 0.5
+    #: How many keyframes back to search for that baseline.
+    scale_neighbour_search: int = 5
+    #: Reject scale estimates outside this range (metres) as implausible for
+    #: two keyframes that appearance matching says are the same place.
+    min_loop_scale_m: float = 0.05
+    max_loop_scale_m: float = 30.0
+
 
 @dataclass
 class PoseGraphConfig:

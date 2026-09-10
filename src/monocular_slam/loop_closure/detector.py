@@ -20,14 +20,36 @@ A loop closure is accepted only after passing every stage of this cascade:
 5. **Cooldown** — after an accepted loop, detection pauses briefly so one
    revisit does not generate a burst of near-duplicate constraints.
 
+Recovering the loop translation magnitude
+-----------------------------------------
 The constraint produced is a relative pose ``T_a_b`` between the two keyframes.
-Its rotation is fully determined; its **translation is unit-norm only**, for
-the same monocular reason the odometry front end cannot recover scale. The
-magnitude is taken from the current odometry estimate of the gap between the
-two keyframes, which is the best available proxy. Because that magnitude is
-uncertain, loop factors are given looser translation noise than odometry
-factors and are wrapped in a robust kernel — see
-:mod:`monocular_slam.optimization.pose_graph`.
+Its rotation is fully determined by the essential matrix; its **translation is
+unit-norm only**, for the same monocular reason the odometry front end cannot
+recover scale.
+
+The obvious shortcut — take the magnitude from the odometry-estimated gap
+between the two keyframes — is *wrong*, and wrong in the most damaging possible
+way. When the trajectory has drifted, that gap **is** the drift: on KITTI
+sequence 00 the odometry gap across accepted loops averages 10.9 m while the
+true separation averages 2.6 m. Feeding that in bakes the drift into the very
+constraint meant to remove it, and measurably makes the optimized trajectory
+worse than the raw one.
+
+The magnitude is therefore recovered from **shared scene structure**
+(:meth:`LoopClosureDetector.estimate_loop_scale`):
+
+1. Triangulate the loop pair's correspondences using the unit-norm relative
+   pose. This yields structure that is correct up to the unknown factor ``s``,
+   the true translation magnitude.
+2. Triangulate the query keyframe against its odometry neighbour, whose
+   relative pose *is* metric. This yields the same scene at true scale.
+3. For features seen in all three views, the ratio of metric to unit depth is
+   ``s``. A robust median over those ratios is the estimate.
+
+If too few features are shared for a reliable ratio, the loop is still used but
+with a much looser translation sigma, so it constrains relative *orientation* —
+which is well determined and is the dominant drift term — without asserting a
+translation magnitude that was never measured.
 """
 
 from __future__ import annotations
@@ -37,7 +59,11 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from monocular_slam.features.matcher import FeatureMatcher, MatchResult
-from monocular_slam.geometry.epipolar import estimate_essential_matrix, recover_relative_pose
+from monocular_slam.geometry.epipolar import (
+    estimate_essential_matrix,
+    recover_relative_pose,
+    triangulate_points,
+)
 from monocular_slam.geometry.transforms import invert_se3, se3_from_rt
 from monocular_slam.loop_closure.database import KeyframeDatabase
 from monocular_slam.utils.logging import get_logger
@@ -70,11 +96,22 @@ class LoopClosure:
     n_matches: int
     n_inliers: int
     inlier_ratio: float
-    #: Odometry-derived translation magnitude applied to the unit direction.
+    #: Translation magnitude applied to the unit direction, in metres.
     scale_m: float
+    #: How that magnitude was obtained: ``"structure"`` (triangulated against
+    #: metrically-scaled neighbouring structure) or ``"unscaled"`` (estimation
+    #: failed; the constraint is treated as orientation-only).
+    scale_method: str = "structure"
+    #: Number of tri-view features that supported the scale estimate.
+    n_scale_points: int = 0
     #: Frame indices, for plotting against the trajectory.
     query_frame_index: int = 0
     match_frame_index: int = 0
+
+    @property
+    def scale_is_measured(self) -> bool:
+        """False when no metric magnitude could be recovered for this loop."""
+        return self.scale_method == "structure"
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -88,6 +125,8 @@ class LoopClosure:
             "n_inliers": self.n_inliers,
             "inlier_ratio": round(self.inlier_ratio, 4),
             "scale_m": round(self.scale_m, 4),
+            "scale_method": self.scale_method,
+            "n_scale_points": self.n_scale_points,
         }
 
 
@@ -101,6 +140,9 @@ class LoopClosureStats:
     rejected_too_few_matches: int = 0
     rejected_geometry: int = 0
     rejected_cooldown: int = 0
+    #: Loops accepted geometrically whose metric magnitude could not be
+    #: recovered; these become orientation-only constraints.
+    scale_estimation_failed: int = 0
     accepted: int = 0
     match_counts: list[int] = field(default_factory=list, repr=False)
     inlier_counts: list[int] = field(default_factory=list, repr=False)
@@ -113,6 +155,7 @@ class LoopClosureStats:
             "rejected_too_few_matches": self.rejected_too_few_matches,
             "rejected_geometry": self.rejected_geometry,
             "rejected_cooldown": self.rejected_cooldown,
+            "scale_estimation_failed": self.scale_estimation_failed,
             "accepted": self.accepted,
             "mean_matches_per_candidate": (
                 round(float(np.mean(self.match_counts)), 1) if self.match_counts else None
@@ -144,6 +187,11 @@ class LoopClosureDetector:
         ransac_method: str = "magsac",
         ransac_threshold_px: float = 1.0,
         cheirality_distance: float = 200.0,
+        min_scale_points: int = 15,
+        min_scale_baseline_m: float = 0.5,
+        scale_neighbour_search: int = 5,
+        min_loop_scale_m: float = 0.05,
+        max_loop_scale_m: float = 30.0,
         timer: StageTimer | None = None,
     ) -> None:
         self.K = np.asarray(K, dtype=np.float64)
@@ -163,6 +211,11 @@ class LoopClosureDetector:
         # than the frame-to-frame front end is appropriate here.
         self.ransac_threshold_px = float(ransac_threshold_px)
         self.cheirality_distance = float(cheirality_distance)
+        self.min_scale_points = int(min_scale_points)
+        self.min_scale_baseline_m = float(min_scale_baseline_m)
+        self.scale_neighbour_search = int(scale_neighbour_search)
+        self.min_loop_scale_m = float(min_loop_scale_m)
+        self.max_loop_scale_m = float(max_loop_scale_m)
         self.timer = timer if timer is not None else StageTimer()
         self.stats = LoopClosureStats()
 
@@ -185,6 +238,11 @@ class LoopClosureDetector:
             ransac_method=config.odometry.ransac_method,
             ransac_threshold_px=max(config.odometry.ransac_threshold_px, 1.0),
             cheirality_distance=config.odometry.cheirality_distance,
+            min_scale_points=lc.min_scale_points,
+            min_scale_baseline_m=lc.min_scale_baseline_m,
+            scale_neighbour_search=lc.scale_neighbour_search,
+            min_loop_scale_m=lc.min_loop_scale_m,
+            max_loop_scale_m=lc.max_loop_scale_m,
             timer=timer,
         )
 
@@ -279,10 +337,22 @@ class LoopClosureDetector:
             self.stats.rejected_geometry += 1
             return None
 
-        # Monocular translation is unit-norm; borrow the magnitude from the
-        # odometry estimate of the gap between these two keyframes.
-        odometry_gap = invert_se3(match.pose) @ query.pose
-        scale = float(np.linalg.norm(odometry_gap[:3, 3]))
+        # Monocular translation is unit-norm; recover its metric magnitude from
+        # structure the query keyframe shares with its metrically-scaled
+        # odometry neighbour. See the module docstring for why the odometry gap
+        # between the two loop keyframes must NOT be used here.
+        scale, n_scale_points = self.estimate_loop_scale(
+            database, candidate.match_id, candidate.query_id, pose.T, matches
+        )
+        if scale is None:
+            self.stats.scale_estimation_failed += 1
+            scale_method = "unscaled"
+            # Keep the direction but give it no asserted magnitude; the pose
+            # graph will down-weight the translation for this edge.
+            scale = 0.0
+        else:
+            scale_method = "structure"
+
         T_match_query = se3_from_rt(pose.T[:3, :3], pose.T[:3, 3] * scale)
 
         self.stats.inlier_counts.append(pose.n_cheirality_inliers)
@@ -296,9 +366,114 @@ class LoopClosureDetector:
             n_inliers=pose.n_cheirality_inliers,
             inlier_ratio=inlier_ratio,
             scale_m=scale,
+            scale_method=scale_method,
+            n_scale_points=n_scale_points,
             query_frame_index=query.frame_index,
             match_frame_index=match.frame_index,
         )
+
+    def estimate_loop_scale(
+        self,
+        database: KeyframeDatabase,
+        match_id: int,
+        query_id: int,
+        T_match_query_unit: np.ndarray,
+        loop_matches: MatchResult,
+    ) -> tuple[float | None, int]:
+        """Recover the metric magnitude of a loop translation, or ``None``.
+
+        Compares two triangulations of the same scene points:
+
+        * the loop pair ``(match, query)``, triangulated with the **unit-norm**
+          relative pose, giving depths that are correct up to the unknown
+          factor ``s``;
+        * the query keyframe against an **odometry neighbour**, whose relative
+          pose carries the front end's metric scale.
+
+        For points seen in all three views, ``s = depth_metric / depth_unit``.
+        The median over those ratios is returned, which resists the outliers
+        that individual bad triangulations produce.
+
+        Returns ``(scale, n_supporting_points)``; ``scale`` is ``None`` when
+        there was not enough shared, well-conditioned structure.
+        """
+        query = database[query_id]
+
+        neighbour, T_query_neighbour = self._metric_neighbour(database, query_id)
+        if neighbour is None:
+            return None, 0
+
+        # Structure from the loop pair, expressed in the query keyframe's frame.
+        loop_points_match_frame = triangulate_points(
+            T_match_query_unit, loop_matches.points_a, loop_matches.points_b, self.K
+        )
+        T_query_match_unit = invert_se3(T_match_query_unit)
+        loop_points_query_frame = (
+            loop_points_match_frame @ T_query_match_unit[:3, :3].T + T_query_match_unit[:3, 3]
+        )
+
+        # Metric structure from the query keyframe and its odometry neighbour.
+        local_matches = self.matcher.match_descriptors(
+            query.descriptors, neighbour.descriptors, query.points, neighbour.points
+        )
+        if len(local_matches) < self.min_scale_points:
+            return None, 0
+        local_points = triangulate_points(
+            T_query_neighbour, local_matches.points_a, local_matches.points_b, self.K
+        )
+
+        # Features observed in all three views, keyed by query keypoint index.
+        loop_slot = {int(idx): i for i, idx in enumerate(loop_matches.indices_b)}
+        shared = [
+            (loop_slot[int(idx)], i)
+            for i, idx in enumerate(local_matches.indices_a)
+            if int(idx) in loop_slot
+        ]
+        if len(shared) < self.min_scale_points:
+            return None, len(shared)
+
+        unit_depths = np.array([loop_points_query_frame[a, 2] for a, _ in shared])
+        metric_depths = np.array([local_points[b, 2] for _, b in shared])
+
+        valid = (
+            np.isfinite(unit_depths)
+            & np.isfinite(metric_depths)
+            & (unit_depths > 1e-3)
+            & (metric_depths > 1e-3)
+        )
+        if int(valid.sum()) < self.min_scale_points:
+            return None, int(valid.sum())
+
+        ratios = metric_depths[valid] / unit_depths[valid]
+        # Trim the tails before taking the median: a handful of near-degenerate
+        # triangulations can otherwise sit at absurd ratios.
+        low, high = np.percentile(ratios, [20, 80])
+        trimmed = ratios[(ratios >= low) & (ratios <= high)]
+        scale = float(np.median(trimmed if len(trimmed) else ratios))
+
+        if not np.isfinite(scale) or not (self.min_loop_scale_m <= scale <= self.max_loop_scale_m):
+            return None, int(valid.sum())
+        return scale, int(valid.sum())
+
+    def _metric_neighbour(
+        self, database: KeyframeDatabase, query_id: int
+    ) -> tuple[object | None, np.ndarray]:
+        """Find a nearby keyframe with enough metric baseline to triangulate.
+
+        Walks backwards from the query keyframe until the odometry translation
+        exceeds a minimum baseline; a stationary vehicle produces adjacent
+        keyframes with no parallax, from which nothing can be triangulated.
+        """
+        query = database[query_id]
+        for offset in range(1, self.scale_neighbour_search + 1):
+            candidate_id = query_id - offset
+            if candidate_id < 0:
+                break
+            neighbour = database[candidate_id]
+            T_query_neighbour = invert_se3(query.pose) @ neighbour.pose
+            if float(np.linalg.norm(T_query_neighbour[:3, 3])) >= self.min_scale_baseline_m:
+                return neighbour, T_query_neighbour
+        return None, np.eye(4)
 
     # ----------------------------------------------------------------- #
     # Full detection pass

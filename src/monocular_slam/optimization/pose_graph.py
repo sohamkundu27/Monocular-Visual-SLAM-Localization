@@ -57,6 +57,11 @@ from monocular_slam.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+#: Translation sigma multiplier for a loop edge whose metric magnitude could
+#: not be recovered. Large enough that the translation residual is effectively
+#: unconstrained while the rotation residual still acts.
+UNSCALED_LOOP_SIGMA_FACTOR = 100.0
+
 
 @dataclass
 class PoseGraphNode:
@@ -342,16 +347,32 @@ def build_pose_graph(
         relative = invert_se3(trajectory[i]) @ trajectory[i + 1]
         graph.add_odometry_edge(i, i + 1, relative, odom_sigma_rot, odom_sigma_trans)
 
+    n_unscaled = 0
     for closure in loop_closures:
+        # A loop whose metric magnitude could not be recovered still carries a
+        # trustworthy *rotation*. Rather than discard it, or assert a
+        # translation that was never measured, its translation sigma is
+        # inflated so the factor acts as an orientation constraint. Heading
+        # drift is the dominant error term, so this is worth keeping.
+        scale_measured = getattr(closure, "scale_is_measured", True)
+        sigma_trans = loop_sigma_trans if scale_measured else loop_sigma_trans * UNSCALED_LOOP_SIGMA_FACTOR
+        n_unscaled += 0 if scale_measured else 1
         graph.add_loop_edge(
             closure.match_id,
             closure.query_id,
             closure.T_match_query,
             sigma_rot=loop_sigma_rot,
-            sigma_trans=loop_sigma_trans,
+            sigma_trans=sigma_trans,
             n_inliers=closure.n_inliers,
             similarity=closure.similarity,
             robust=robust_loops,
+        )
+    if n_unscaled:
+        logger.info(
+            "%d of %d loop edges have no measured translation magnitude and were "
+            "added as orientation-only constraints",
+            n_unscaled,
+            len(loop_closures),
         )
 
     logger.info(
