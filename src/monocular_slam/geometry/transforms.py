@@ -155,16 +155,28 @@ def project_to_se3(T: np.ndarray) -> np.ndarray:
 def rotation_angle_rad(R: np.ndarray) -> float:
     """Geodesic rotation angle of ``R`` in radians, in ``[0, pi]``.
 
-    Computed from the trace with clipping, which is stable for the small
-    rotations dominating frame-to-frame motion.
+    Uses ``atan2(sin(theta), cos(theta))`` rather than ``arccos`` of the trace.
+    The arccos form is catastrophically ill-conditioned near identity: its
+    derivative is unbounded there, so the ~1e-16 rounding error in the trace
+    inflates to ~1e-8 rad. That matters directly, because relative pose error
+    between two nearly identical trajectories is exactly the near-identity
+    regime, and the arccos form puts a spurious ~1e-5 degree floor under it.
+
+    ``sin(theta)`` comes from the antisymmetric part of ``R`` and ``cos(theta)``
+    from its trace; ``atan2`` of the pair is exact at zero and well behaved
+    across the full range.
     """
     R = np.asarray(R, dtype=np.float64)
     if R.shape == (4, 4):
         R = R[:3, :3]
     if R.shape != (3, 3):
         raise ValueError(f"Expected a 3x3 or 4x4 matrix, got {R.shape}")
-    cos_theta = (np.trace(R) - 1.0) / 2.0
-    return float(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
+    axis = np.array(
+        [R[2, 1] - R[1, 2], R[0, 2] - R[2, 0], R[1, 0] - R[0, 1]], dtype=np.float64
+    )
+    sin_theta = float(np.linalg.norm(axis)) / 2.0
+    cos_theta = (float(np.trace(R)) - 1.0) / 2.0
+    return float(np.arctan2(sin_theta, cos_theta))
 
 
 def rotation_angle_deg(R: np.ndarray) -> float:
