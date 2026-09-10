@@ -415,7 +415,7 @@ error between two similar trajectories.
 
 ---
 
-### Performance
+## Performance
 
 Every run is instrumented per stage with `time.perf_counter`; the totals land in
 `metrics.json` under `timing.stages` and are printed to `run.log`. The overhead is two clock
