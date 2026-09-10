@@ -388,3 +388,101 @@ def write_resume_metrics(
     out.write_text(render_resume_metrics(summaries), encoding="utf-8")
     logger.info("Wrote %s from %d run(s)", out, len(summaries))
     return out
+
+
+#: Markers delimiting the auto-generated results block in the README.
+README_START = "<!-- RESULTS:START -->"
+README_END = "<!-- RESULTS:END -->"
+
+
+def render_readme_results(summaries: list[RunSummary]) -> str:
+    """Render the README results block from measured runs."""
+    if not summaries:
+        return (
+            "_No benchmark runs recorded yet. Run the pipeline (see "
+            "[Usage](#usage)) and then `python scripts/report.py --update-readme`._"
+        )
+
+    uses_gt_scale = any(s.scale_uses_ground_truth for s in summaries)
+    lines: list[str] = []
+
+    if uses_gt_scale:
+        lines += [
+            "> **All figures below are from real runs of this repository on KITTI Odometry.** "
+            "They use `odometry.scale_source: ground_truth`, which takes the per-frame "
+            "translation *magnitude* from ground truth. Monocular vision cannot recover "
+            "absolute scale; the estimator recovers translation *direction* and full rotation. "
+            "These numbers therefore measure trajectory shape, heading drift and loop-closure "
+            "benefit — **not** metric-scale localization. See "
+            "[Monocular scale ambiguity](#4-monocular-scale-ambiguity).",
+            "",
+        ]
+    else:
+        lines += [
+            "> **All figures below are from real runs of this repository on KITTI Odometry.**",
+            "",
+        ]
+
+    lines += [results_table(summaries), ""]
+    lines += ["### Front-end statistics", "", feature_table(summaries), ""]
+
+    highlights = measured_highlights(summaries)
+    if highlights:
+        lines += ["### Highlights", ""]
+        lines += [f"- {h}" for h in highlights]
+        lines.append("")
+
+    # Reference any figures the runs actually produced.
+    figures = []
+    for s in summaries:
+        base = Path("outputs") / f"sequence_{s.sequence}"
+        figures.append(
+            f"| {s.sequence} "
+            f"| `{base / 'trajectory_comparison.png'}` "
+            f"| `{base / 'loop_closures.png'}` "
+            f"| `{base / 'error_over_time.png'}` |"
+        )
+    lines += [
+        "### Generated figures",
+        "",
+        "Each run writes these to its output directory:",
+        "",
+        "| Sequence | Raw vs optimized | Loop closures | Error over distance |",
+        "|---|---|---|---|",
+        *figures,
+        "",
+        "_Regenerate with `python scripts/report.py --update-readme`._",
+    ]
+    return "\n".join(lines)
+
+
+def update_readme_results(
+    readme_path: Path | str = "README.md", output_root: Path | str = "outputs"
+) -> bool:
+    """Replace the README's results block with measured results.
+
+    Returns ``True`` when the file was rewritten. The markers must already be
+    present; this never appends a block to an arbitrary position in the file.
+    """
+    path = Path(readme_path)
+    if not path.is_file():
+        logger.warning("README not found at %s; skipping results injection", path)
+        return False
+
+    text = path.read_text(encoding="utf-8")
+    if README_START not in text or README_END not in text:
+        logger.warning(
+            "README is missing the %s / %s markers; skipping results injection",
+            README_START,
+            README_END,
+        )
+        return False
+
+    before, _, rest = text.partition(README_START)
+    _, _, after = rest.partition(README_END)
+    block = render_readme_results(load_run_summaries(output_root))
+    path.write_text(
+        f"{before}{README_START}\n{block}\n{README_END}{after}", encoding="utf-8"
+    )
+    logger.info("Updated results block in %s", path)
+    return True

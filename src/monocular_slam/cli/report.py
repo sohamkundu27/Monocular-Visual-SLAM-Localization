@@ -5,7 +5,12 @@ from __future__ import annotations
 import argparse
 import sys
 
-from monocular_slam.reporting import load_run_summaries, render_resume_metrics, write_resume_metrics
+from monocular_slam.reporting import (
+    load_run_summaries,
+    render_resume_metrics,
+    update_readme_results,
+    write_resume_metrics,
+)
 from monocular_slam.utils.logging import setup_logging
 
 DESCRIPTION = """\
@@ -33,6 +38,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--print", action="store_true", help="Also print the document")
     parser.add_argument(
+        "--update-readme", action="store_true",
+        help="Also inject the results table into README.md between its RESULTS markers",
+    )
+    parser.add_argument(
+        "--readme", type=str, default="README.md", help="README path (default: README.md)",
+    )
+    parser.add_argument(
         "--log-level", type=str, default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
     )
@@ -53,6 +65,10 @@ def main(argv: list[str] | None = None) -> int:
 
     path = write_resume_metrics(args.outputs, args.output)
     print(f"Wrote {path} from {len(summaries)} run(s)")
+
+    if args.update_readme and update_readme_results(args.readme, args.outputs):
+        print(f"Updated results block in {args.readme}")
+
     if args.print:
         print()
         print(render_resume_metrics(summaries))

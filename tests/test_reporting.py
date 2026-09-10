@@ -17,6 +17,7 @@ from monocular_slam.reporting import (
     render_resume_metrics,
     resume_bullets,
     results_table,
+    update_readme_results,
     write_resume_metrics,
 )
 
@@ -191,6 +192,61 @@ class TestDocument:
         write_run(tmp_path, "00", FULL_METRICS)
         path = write_resume_metrics(tmp_path, tmp_path / "custom" / "out.md")
         assert path.name == "out.md"
+
+
+class TestReadmeInjection:
+    def test_replaces_the_marked_block(self, tmp_path):
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            "# Title\n\n## Results\n\n<!-- RESULTS:START -->\nplaceholder\n"
+            "<!-- RESULTS:END -->\n\n## Next\n",
+            encoding="utf-8",
+        )
+        write_run(tmp_path, "00", FULL_METRICS)
+        assert update_readme_results(readme, tmp_path) is True
+
+        text = readme.read_text(encoding="utf-8")
+        assert "placeholder" not in text
+        assert "| 00 " in text
+        # Surrounding content must be untouched.
+        assert text.startswith("# Title")
+        assert text.rstrip().endswith("## Next")
+
+    def test_injection_is_idempotent(self, tmp_path):
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            "a\n<!-- RESULTS:START -->\nx\n<!-- RESULTS:END -->\nb\n", encoding="utf-8"
+        )
+        write_run(tmp_path, "00", FULL_METRICS)
+        update_readme_results(readme, tmp_path)
+        first = readme.read_text(encoding="utf-8")
+        update_readme_results(readme, tmp_path)
+        assert readme.read_text(encoding="utf-8") == first
+
+    def test_missing_markers_are_left_alone(self, tmp_path):
+        readme = tmp_path / "README.md"
+        readme.write_text("# No markers here\n", encoding="utf-8")
+        assert update_readme_results(readme, tmp_path) is False
+        assert readme.read_text(encoding="utf-8") == "# No markers here\n"
+
+    def test_missing_readme_is_not_an_error(self, tmp_path):
+        assert update_readme_results(tmp_path / "nope.md", tmp_path) is False
+
+    def test_scale_caveat_appears_in_the_block(self, tmp_path):
+        readme = tmp_path / "README.md"
+        readme.write_text("<!-- RESULTS:START -->\n<!-- RESULTS:END -->\n", encoding="utf-8")
+        write_run(tmp_path, "00", FULL_METRICS)
+        update_readme_results(readme, tmp_path)
+        assert "cannot recover absolute scale" in readme.read_text(encoding="utf-8")
+
+    def test_repo_readme_has_the_markers(self):
+        """Guards against the markers being edited out of the real README."""
+        from pathlib import Path as _Path
+
+        readme = _Path(__file__).resolve().parent.parent / "README.md"
+        text = readme.read_text(encoding="utf-8")
+        assert "<!-- RESULTS:START -->" in text
+        assert "<!-- RESULTS:END -->" in text
 
 
 class TestReportCLI:
