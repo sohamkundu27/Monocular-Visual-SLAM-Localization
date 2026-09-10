@@ -648,9 +648,12 @@ three land in `diagnostics.csv`.
 matrices, or `NaN`; `recoverPose` can return a reflection. Each is checked explicitly rather
 than discovered as a corrupted trajectory 2000 frames later.
 
-**Thresholds were measured, not guessed.** The MAGSAC++ switch, the 0.5 px threshold, the 1024-word
-vocabulary and the raised cheirality distance each came from a sweep on real KITTI frames; the
-numbers are in this README and in the code comments.
+**Thresholds were measured, not guessed.** The MAGSAC++ switch, the 0.5 px threshold, the
+1024-word vocabulary, the raised cheirality distance and the 10 m loop-plausibility gate each
+came from a measurement on real KITTI frames; the numbers are in this README and in the code
+comments. Two of them — the loop translation source and that plausibility gate — were changed
+*because* an initial implementation made the optimized trajectory worse than the raw one, and
+the measurement said why.
 
 **The pose graph is framework-agnostic.** `PoseGraph` is plain NumPy with its own validation
 and residual diagnostics; `gtsam_backend.py` is the only file that imports GTSAM, and it does
@@ -682,6 +685,11 @@ generator refuses to build a claim from a value that was not measured.
 - **Flat vocabulary.** A single-level 1024-word vocabulary, not a hierarchical DBoW2 tree.
   Recall@5 for true loops is ~48% on sequence 00; a hierarchical vocabulary with direct-index
   filtering would do better.
+- **Repetitive scenes still stress loop closure.** On a highway, appearance retrieval *and*
+  geometric verification both accept places 80 m apart. The metric-plausibility gate catches
+  them here, but it is a last line of defence: a scene where a look-alike also sits within a
+  few metres of the query would defeat it. Sequence 01 has no true loops, so the system's
+  correct behaviour there is to find none.
 - **Constant diagonal noise models.** Real per-edge covariances from the estimator would weight
   the graph better than hand-set sigmas.
 - **No relocalization or map persistence.** The system runs one sequence start to finish; it
