@@ -29,6 +29,8 @@ dev = ["pytest>=7.4", "ruff>=0.4"]
 [project.scripts]
 run-vo = "monocular_slam.cli.run_vo:main"
 run-slam = "monocular_slam.cli.run_slam:main"
+slam-evaluate = "monocular_slam.cli.evaluate:main"
+slam-report = "monocular_slam.cli.report:main"
 
 [project.urls]
 Repository = "https://github.com/sohamkundu27/Monocular-Visual-SLAM-Localization"
