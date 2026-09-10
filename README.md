@@ -708,7 +708,9 @@ Runs are deterministic: Python, NumPy and OpenCV RNGs are all seeded from `runti
 │   │   └── plotting.py               # all figures
 │   └── utils/                        # logging, seeding, timing
 ├── tests/                            # runs without the KITTI download
-└── outputs/                          # generated, git-ignored
+├── docs/results/                     # published figures the README renders
+└── outputs/                          # git-ignored, except resume_metrics.md
+    └── sequence_XX/                  # one directory per benchmark run
 ```
 
 ---
