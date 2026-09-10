@@ -111,8 +111,9 @@ _NEGATION_KEYS = {
 def _parse_scalar(text: str) -> Any:
     """Convert a ``--set`` value string to bool/int/float/None where sensible.
 
-    Sequence ids such as ``00`` must survive as strings, which is why the
-    integer branch rejects anything with a leading zero.
+    Zero-padded values are deliberately left as strings: KITTI sequence ids are
+    written ``00`` and ``05``, and turning those into ``0`` and ``5`` would make
+    ``--set dataset.sequence=00`` silently look for the wrong directory.
     """
     lowered = text.lower()
     if lowered in ("true", "yes", "on"):
@@ -121,8 +122,13 @@ def _parse_scalar(text: str) -> Any:
         return False
     if lowered in ("none", "null", ""):
         return None
-    if text.lstrip("-").isdigit() and not (len(text) > 1 and text.lstrip("-").startswith("0")):
+
+    digits = text.lstrip("-")
+    if digits.isdigit():
+        if len(digits) > 1 and digits.startswith("0"):
+            return text  # zero-padded identifier, not a number
         return int(text)
+
     try:
         return float(text)
     except ValueError:
