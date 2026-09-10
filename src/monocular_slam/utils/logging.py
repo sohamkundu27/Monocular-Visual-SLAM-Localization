@@ -17,34 +17,48 @@ _DATE_FORMAT = "%H:%M:%S"
 _ROOT_LOGGER_NAME = "monocular_slam"
 
 
+def _as_level(level: int | str, default: int = logging.INFO) -> int:
+    if isinstance(level, str):
+        return getattr(logging, level.upper(), default)
+    return int(level)
+
+
 def setup_logging(
     level: int | str = logging.INFO,
     log_file: Path | str | None = None,
     *,
     quiet: bool = False,
+    file_level: int | str = logging.INFO,
 ) -> logging.Logger:
     """Configure the package logger.
 
     Parameters
     ----------
     level:
-        Logging level for both handlers (``logging.INFO`` by default).
+        Console logging level.
     log_file:
         Optional path to mirror the log stream into. Parent directories are
         created automatically.
     quiet:
         Suppress the console handler (the file handler, if any, still runs).
+    file_level:
+        Level for the file handler, independent of the console. Defaults to
+        ``INFO`` so ``run.log`` is always a complete record of the run even
+        when the console is turned down — an empty log next to a set of result
+        files is worse than useless when you come back to it later.
 
     Returns
     -------
     logging.Logger
         The configured package-root logger.
     """
-    if isinstance(level, str):
-        level = getattr(logging, level.upper(), logging.INFO)
+    level = _as_level(level)
+    file_level = _as_level(file_level)
 
     logger = logging.getLogger(_ROOT_LOGGER_NAME)
-    logger.setLevel(level)
+    # The logger itself must pass through whatever the most verbose handler
+    # wants; each handler then applies its own threshold.
+    logger.setLevel(min(level, file_level))
     # Re-configuring (e.g. across sequences in one process) must not duplicate
     # every message, so tear down previously installed handlers first.
     for handler in list(logger.handlers):
@@ -64,7 +78,7 @@ def setup_logging(
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_path, mode="w", encoding="utf-8")
-        file_handler.setLevel(level)
+        file_handler.setLevel(file_level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
