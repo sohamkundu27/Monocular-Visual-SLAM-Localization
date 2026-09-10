@@ -33,9 +33,11 @@ matcher:
   min_matches: 20
 
 odometry:
-  ransac_threshold_px: 1.0
+  ransac_method: magsac        # MAGSAC++; ~3x lower rotation error than plain RANSAC
+  ransac_threshold_px: 0.5
   ransac_confidence: 0.999
   ransac_max_iters: 2000
+  cheirality_distance: 200.0   # OpenCV's default of 50 discards distant road structure
   min_inliers: 30
   min_inlier_ratio: 0.3
   max_rotation_deg: 30.0

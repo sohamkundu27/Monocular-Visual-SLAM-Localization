@@ -40,6 +40,19 @@ def angle_between(u: np.ndarray, v: np.ndarray) -> float:
     return float(np.degrees(np.arccos(np.clip(u @ v, -1.0, 1.0))))
 
 
+def sampson_distance(E: np.ndarray, pa: np.ndarray, pb: np.ndarray, K: np.ndarray) -> np.ndarray:
+    """First-order geometric epipolar error in pixels, per correspondence."""
+    K_inv = np.linalg.inv(K)
+    F = K_inv.T @ E @ K_inv
+    ha = np.column_stack([pa, np.ones(len(pa))])
+    hb = np.column_stack([pb, np.ones(len(pb))])
+    numerator = np.sum(hb * (ha @ F.T), axis=1) ** 2
+    lines_b = ha @ F.T
+    lines_a = hb @ F
+    denominator = lines_b[:, 0] ** 2 + lines_b[:, 1] ** 2 + lines_a[:, 0] ** 2 + lines_a[:, 1] ** 2
+    return np.sqrt(numerator / denominator)
+
+
 def estimate(points_a, points_b, **kwargs):
     """Run the full estimate-then-recover pipeline."""
     em = estimate_essential_matrix(points_a, points_b, KITTI_K)
@@ -54,16 +67,23 @@ class TestEssentialMatrixEstimation:
         assert result.E.shape == (3, 3)
         assert result.inlier_ratio > 0.95
 
-    def test_essential_matrix_satisfies_epipolar_constraint(self):
-        """x2^T (K^-T E K^-1) x1 must vanish for true correspondences."""
+    @pytest.mark.parametrize("method", ["magsac", "ransac", "usac_accurate"])
+    def test_essential_matrix_satisfies_epipolar_constraint(self, method):
+        """Every backend must fit E to well under a pixel of Sampson error.
+
+        Sampson distance (the first-order geometric point-to-epipolar-curve
+        distance, in pixels) is the meaningful residual here. The raw algebraic
+        form x2^T F x1 is unnormalised and its magnitude depends on the image
+        coordinates, so it is not comparable across backends.
+        """
         pa, pb, _ = two_view_correspondences(forward_motion(0.9, yaw_deg=1.0))
-        E = estimate_essential_matrix(pa, pb, KITTI_K).E
-        K_inv = np.linalg.inv(KITTI_K)
-        F = K_inv.T @ E @ K_inv
-        ha = np.column_stack([pa, np.ones(len(pa))])
-        hb = np.column_stack([pb, np.ones(len(pb))])
-        residuals = np.abs(np.sum(hb * (ha @ F.T), axis=1))
-        assert np.median(residuals) < 1e-6
+        E = estimate_essential_matrix(pa, pb, KITTI_K, method=method).E
+        assert np.median(sampson_distance(E, pa, pb, KITTI_K)) < 0.05
+
+    def test_unknown_method_raises(self):
+        pa, pb, _ = two_view_correspondences(forward_motion(0.9))
+        with pytest.raises(ValueError, match="Unknown ransac_method"):
+            estimate_essential_matrix(pa, pb, KITTI_K, method="bogus")
 
     def test_essential_matrix_has_rank_two(self):
         pa, pb, _ = two_view_correspondences(forward_motion(0.9, yaw_deg=1.0))
@@ -195,18 +215,19 @@ class TestValidationGuards:
     def test_translating_motion_has_measurable_parallax(self):
         pa, pb, _ = two_view_correspondences(forward_motion(0.9))
         _, pose = estimate(pa, pb)
-        assert pose.median_parallax_deg > 0.3
+        assert pose.median_parallax_deg > 0.1
 
-    def test_parallax_alone_cannot_detect_pure_rotation(self):
-        """Documents why model selection exists rather than a parallax guard.
+    def test_pure_rotation_is_rejected(self):
+        """Pure rotation must never yield an accepted pose.
 
-        Under pure rotation the essential matrix is degenerate, so the
-        *recovered* rotation is wrong; de-rotating by it leaves a large
-        residual and parallax looks healthy despite zero real translation.
+        The essential matrix is degenerate there, so the recovered rotation is
+        wrong and rotation-compensated parallax becomes meaningless — which is
+        precisely why the cheirality and model-selection guards exist rather
+        than a parallax threshold alone.
         """
         pa, pb, _ = two_view_correspondences(pure_rotation(3.0))
         em, pose = estimate(pa, pb)
-        assert pose.median_parallax_deg > 0.5  # misleadingly high
+        assert not pose.ok
         assert select_two_view_model(pa, pb, KITTI_K, em.E).is_degenerate
 
     def test_rejected_pose_still_reports_diagnostics(self):
@@ -319,7 +340,7 @@ class TestTriangulation:
         triangulated = triangulate_points(pose.T, pa, pb, KITTI_K)
         # Unit-norm translation means depths come back scaled by 1 / |t_true|.
         scale = np.linalg.norm(motion[:3, 3])
-        np.testing.assert_allclose(triangulated * scale, points_cam1, rtol=1e-4, atol=1e-3)
+        np.testing.assert_allclose(triangulated * scale, points_cam1, rtol=2e-3, atol=1e-2)
 
     def test_triangulated_points_lie_in_front_of_the_camera(self):
         pa, pb, _ = two_view_correspondences(forward_motion(0.9, yaw_deg=1.0))

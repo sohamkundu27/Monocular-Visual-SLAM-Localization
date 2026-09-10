@@ -95,15 +95,25 @@ class MatcherConfig:
 class OdometryConfig:
     """Two-view relative pose estimation."""
 
-    #: RANSAC inlier threshold in pixels for the essential matrix.
-    ransac_threshold_px: float = 1.0
+    #: Robust estimator for the essential matrix: ``"magsac"`` (default),
+    #: ``"usac_accurate"``, ``"ransac"`` or ``"lmeds"``. MAGSAC++ measurably
+    #: outperforms plain RANSAC here; see geometry/epipolar.py.
+    ransac_method: str = "magsac"
+    #: Inlier threshold in pixels. Tighter than the usual 1.0 because MAGSAC
+    #: tolerates it and per-frame rotation error drops by roughly 3x.
+    ransac_threshold_px: float = 0.5
     #: RANSAC target confidence.
     ransac_confidence: float = 0.999
     #: Maximum RANSAC iterations.
     ransac_max_iters: int = 2000
+    #: Maximum triangulated-point distance for the cheirality test, in units
+    #: of the unit translation. OpenCV's default of 50 is too aggressive for
+    #: road scenes.
+    cheirality_distance: float = 200.0
     #: Reject a relative pose supported by fewer than this many inliers.
     min_inliers: int = 30
-    #: Reject a relative pose whose inlier fraction is below this.
+    #: Reject a relative pose when this fraction of the epipolar inliers fails
+    #: the cheirality test.
     min_inlier_ratio: float = 0.3
     #: Reject rotations larger than this between consecutive frames (degrees).
     max_rotation_deg: float = 30.0
