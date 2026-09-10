@@ -14,6 +14,7 @@ from monocular_slam.reporting import (
     RunSummary,
     load_run_summaries,
     measured_highlights,
+    publish_figures,
     render_resume_metrics,
     results_table,
     resume_bullets,
@@ -247,6 +248,50 @@ class TestReadmeInjection:
         text = readme.read_text(encoding="utf-8")
         assert "<!-- RESULTS:START -->" in text
         assert "<!-- RESULTS:END -->" in text
+
+
+class TestFigurePublishing:
+    def test_copies_known_figures(self, tmp_path):
+        run_dir = write_run(tmp_path, "00", FULL_METRICS)
+        for name in ("trajectory_comparison.png", "loop_closures.png", "error_over_time.png"):
+            (run_dir / name).write_bytes(b"fake png bytes")
+        (run_dir / "diagnostics.png").write_bytes(b"not published")
+
+        written = publish_figures(tmp_path, tmp_path / "docs")
+        assert len(written) == 3
+        assert (tmp_path / "docs" / "sequence_00" / "trajectory_comparison.png").is_file()
+        assert not (tmp_path / "docs" / "sequence_00" / "diagnostics.png").exists()
+
+    def test_missing_figures_are_skipped(self, tmp_path):
+        write_run(tmp_path, "00", FULL_METRICS)
+        assert publish_figures(tmp_path, tmp_path / "docs") == []
+
+    def test_directories_without_metrics_are_ignored(self, tmp_path):
+        stray = tmp_path / "sequence_99"
+        stray.mkdir()
+        (stray / "trajectory_comparison.png").write_bytes(b"x")
+        assert publish_figures(tmp_path, tmp_path / "docs") == []
+
+    def test_readme_embeds_published_figures(self, tmp_path, monkeypatch):
+        import monocular_slam.reporting as reporting
+
+        run_dir = write_run(tmp_path, "00", FULL_METRICS)
+        for name, _caption in reporting.PUBLISHED_FIGURES:
+            (run_dir / name).write_bytes(b"x")
+        figure_dir = tmp_path / "docs" / "results"
+        publish_figures(tmp_path, figure_dir)
+        monkeypatch.setattr(reporting, "FIGURE_DIR", figure_dir)
+
+        block = reporting.render_readme_results(load_run_summaries(tmp_path))
+        assert "![" in block
+        assert "trajectory_comparison.png" in block
+
+    def test_readme_points_at_the_command_when_nothing_is_published(self, tmp_path):
+        write_run(tmp_path, "00", FULL_METRICS)
+        from monocular_slam.reporting import render_readme_results
+
+        block = render_readme_results(load_run_summaries(tmp_path))
+        assert "--publish-figures" in block
 
 
 class TestReportCLI:

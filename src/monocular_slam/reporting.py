@@ -431,28 +431,81 @@ def render_readme_results(summaries: list[RunSummary]) -> str:
         lines += [f"- {h}" for h in highlights]
         lines.append("")
 
-    # Reference any figures the runs actually produced.
-    figures = []
-    for s in summaries:
-        base = Path("outputs") / f"sequence_{s.sequence}"
-        figures.append(
-            f"| {s.sequence} "
-            f"| `{base / 'trajectory_comparison.png'}` "
-            f"| `{base / 'loop_closures.png'}` "
-            f"| `{base / 'error_over_time.png'}` |"
-        )
-    lines += [
-        "### Generated figures",
-        "",
-        "Each run writes these to its output directory:",
-        "",
-        "| Sequence | Raw vs optimized | Loop closures | Error over distance |",
-        "|---|---|---|---|",
-        *figures,
-        "",
-        "_Regenerate with `python scripts/report.py --update-readme`._",
-    ]
+    lines += _figure_section(summaries)
+    lines.append("_Regenerate with `python scripts/report.py --update-readme`._")
     return "\n".join(lines)
+
+
+#: Figures copied out of a run directory for display in the README, in the
+#: order they should appear.
+PUBLISHED_FIGURES = (
+    ("trajectory_comparison.png", "Ground truth vs raw VO vs optimized SLAM"),
+    ("loop_closures.png", "Accepted loop-closure edges"),
+    ("error_over_time.png", "Position error against distance travelled"),
+)
+
+FIGURE_DIR = Path("docs/results")
+
+
+def _figure_section(summaries: list[RunSummary]) -> list[str]:
+    """Embed published figures, falling back to a pointer when absent."""
+    lines = ["### Trajectories", ""]
+    any_published = False
+
+    for s in summaries:
+        published = [
+            (name, caption)
+            for name, caption in PUBLISHED_FIGURES
+            if (FIGURE_DIR / f"sequence_{s.sequence}" / name).is_file()
+        ]
+        if not published:
+            continue
+        any_published = True
+        lines += [f"**Sequence {s.sequence}**", ""]
+        for name, caption in published:
+            path = FIGURE_DIR / f"sequence_{s.sequence}" / name
+            lines.append(f"![{caption} — KITTI sequence {s.sequence}]({path.as_posix()})")
+            lines.append("")
+            lines.append(f"*{caption}.*")
+            lines.append("")
+
+    if not any_published:
+        lines += [
+            "_Figures are written to `outputs/sequence_XX/` by each run. Publish them into "
+            "`docs/results/` with `python scripts/report.py --publish-figures --update-readme`._",
+            "",
+        ]
+    return lines
+
+
+def publish_figures(
+    output_root: Path | str = "outputs", figure_dir: Path | str = FIGURE_DIR
+) -> list[Path]:
+    """Copy the README-facing figures out of run directories into ``figure_dir``.
+
+    Run outputs are git-ignored (they are regenerated, and include large
+    intermediates), but a handful of result images belong in version control so
+    the README renders on GitHub. Returns the paths written.
+    """
+    import shutil
+
+    root = Path(output_root)
+    destination_root = Path(figure_dir)
+    written: list[Path] = []
+
+    for run_dir in sorted(root.glob("sequence_*")):
+        if not (run_dir / "metrics.json").is_file():
+            continue
+        destination = destination_root / run_dir.name
+        destination.mkdir(parents=True, exist_ok=True)
+        for name, _caption in PUBLISHED_FIGURES:
+            source = run_dir / name
+            if source.is_file():
+                shutil.copy2(source, destination / name)
+                written.append(destination / name)
+
+    logger.info("Published %d figures to %s", len(written), destination_root)
+    return written
 
 
 def update_readme_results(

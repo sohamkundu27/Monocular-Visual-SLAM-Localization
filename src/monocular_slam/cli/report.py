@@ -7,6 +7,7 @@ import sys
 
 from monocular_slam.reporting import (
     load_run_summaries,
+    publish_figures,
     render_resume_metrics,
     update_readme_results,
     write_resume_metrics,
@@ -45,6 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--readme", type=str, default="README.md", help="README path (default: README.md)",
     )
     parser.add_argument(
+        "--publish-figures", action="store_true",
+        help="Copy result figures from run outputs into docs/results/ so the README "
+             "renders them on GitHub (run outputs are git-ignored)",
+    )
+    parser.add_argument(
         "--log-level", type=str, default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
     )
@@ -62,6 +68,10 @@ def main(argv: list[str] | None = None) -> int:
             "  python scripts/run_slam.py --sequence 00 --dataset-path /path/to/KITTI/dataset",
             file=sys.stderr,
         )
+
+    if args.publish_figures:
+        published = publish_figures(args.outputs)
+        print(f"Published {len(published)} figure(s) to docs/results/")
 
     path = write_resume_metrics(args.outputs, args.output)
     print(f"Wrote {path} from {len(summaries)} run(s)")
