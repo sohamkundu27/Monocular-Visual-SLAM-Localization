@@ -1,0 +1,100 @@
+# Default configuration for KITTI Odometry monocular SLAM.
+#
+# Every key mirrors a field in monocular_slam.config; unknown keys raise a
+# ConfigError rather than being silently ignored. Values omitted here fall back
+# to the dataclass defaults in src/monocular_slam/config.py.
+
+dataset:
+  # Directory containing sequences/ and poses/. Override on the CLI with
+  #   --dataset-path /path/to/KITTI/dataset
+  path: data/kitti/dataset
+  sequence: "00"
+  camera: image_0        # left grayscale camera
+  frame_step: 1
+  start_frame: 0
+  max_frames: null       # null = whole sequence
+  grayscale: true
+
+features:
+  detector: orb
+  max_features: 3000
+  fast_threshold: 20
+  scale_factor: 1.2
+  n_levels: 8
+  edge_threshold: 31
+  clahe: false
+
+matcher:
+  matcher: bf
+  use_ratio_test: true
+  ratio: 0.75
+  cross_check: true
+  max_distance: 64.0     # Hamming distance ceiling for ORB
+  min_matches: 20
+
+odometry:
+  ransac_threshold_px: 1.0
+  ransac_confidence: 0.999
+  ransac_max_iters: 2000
+  min_inliers: 30
+  min_inlier_ratio: 0.3
+  max_rotation_deg: 30.0
+  # Monocular VO recovers translation direction only. "ground_truth" takes the
+  # per-frame translation magnitude from KITTI ground truth so trajectory SHAPE
+  # and drift can be benchmarked. See the README section on scale ambiguity.
+  scale_source: ground_truth
+  constant_scale: 0.85
+  min_scale: 0.001
+  max_scale: 10.0
+
+keyframes:
+  every_n_frames: 5
+  min_translation_m: 2.0
+  min_rotation_deg: 10.0
+
+loop_closure:
+  enabled: true
+  vocabulary_size: 256
+  vocabulary_train_descriptors: 60000
+  min_keyframe_separation: 30
+  min_path_separation_m: 30.0
+  top_k: 5
+  min_similarity: 0.20
+  similarity_ratio: 0.85
+  min_matches: 60
+  min_inliers: 40
+  min_inlier_ratio: 0.35
+  cooldown_keyframes: 10
+  max_loops: 0
+
+pose_graph:
+  prior_sigma_rot: 0.0001
+  prior_sigma_trans: 0.0001
+  odom_sigma_rot: 0.02
+  odom_sigma_trans: 0.10
+  loop_sigma_rot: 0.05
+  loop_sigma_trans: 0.30
+  robust_loop_kernel: true
+  huber_k: 1.345
+  optimizer: levenberg_marquardt
+  max_iterations: 100
+  verbose: false
+
+evaluation:
+  alignment: sim3        # Umeyama similarity alignment (monocular-appropriate)
+  rpe_deltas: [1, 10, 100]
+  drift_segment_lengths_m: [100, 200, 300, 400, 500, 600, 700, 800]
+
+output:
+  root: outputs
+  run_name: sequence_{sequence}
+  save_plots: true
+  save_diagnostics: true
+  dpi: 150
+  plot_format: png
+  plot_3d: true
+
+runtime:
+  seed: 0
+  log_level: INFO
+  progress_interval: 250
