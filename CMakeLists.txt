@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 project(mvslam
     VERSION 0.1.0
     DESCRIPTION "Classical monocular visual SLAM and localization on KITTI Odometry (C++17 port)"

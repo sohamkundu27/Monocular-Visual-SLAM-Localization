@@ -39,6 +39,7 @@ function(mvslam_add_test name)
     endforeach()
     gtest_discover_tests(${name}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        TEST_PREFIX "${name}."
         DISCOVERY_TIMEOUT 60
         PROPERTIES LABELS ${name})
 endfunction()
