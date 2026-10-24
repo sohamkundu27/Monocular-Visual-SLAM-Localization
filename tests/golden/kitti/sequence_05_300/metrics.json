@@ -1,0 +1,208 @@
+{
+  "sequence": "05",
+  "frames": 300,
+  "distance_km": 0.2313,
+  "successful_pose_rate_pct": 100.0,
+  "ate_rmse_raw_m": 2.7982,
+  "ate_rmse_optimized_m": null,
+  "ate_reduction_pct": null,
+  "translational_drift_raw_pct": 4.5718,
+  "translational_drift_optimized_pct": null,
+  "rotational_drift_deg_per_100m": 4.35808,
+  "rotational_drift_optimized_deg_per_100m": null,
+  "loop_closures_detected": 0,
+  "avg_features_per_frame": 2998.9,
+  "avg_matches_per_pair": 1097.1,
+  "avg_inlier_ratio_pct": 67.54,
+  "runtime_fps": 11.05,
+  "ground_truth_available": true,
+  "scale_source": "ground_truth",
+  "scale_uses_ground_truth": true,
+  "alignment": "sim3",
+  "dataset": {
+    "sequence": "05",
+    "camera": "image_0",
+    "root": "/home/soham/datasets/kitti/dataset",
+    "frames_available": 2761,
+    "frames_selected": 300,
+    "start_frame": 0,
+    "frame_step": 1,
+    "image_size": [
+      1226,
+      370
+    ],
+    "fx": 707.0912,
+    "fy": 707.0912,
+    "cx": 601.8873,
+    "cy": 183.1104,
+    "has_ground_truth": true,
+    "ground_truth_path_length_m": 231.273
+  },
+  "odometry": {
+    "transitions": 299,
+    "successful": 299,
+    "status_counts": {
+      "ok": 299
+    },
+    "degenerate_transitions": 0,
+    "avg_ransac_inliers": 742.4,
+    "avg_cheirality_ratio_pct": 86.4,
+    "scale_strategy": {
+      "strategy": "ground_truth",
+      "uses_ground_truth": true,
+      "n_transitions": 299,
+      "median_step_m": 0.7867084341736804
+    }
+  },
+  "loop_closure": {
+    "enabled": true,
+    "n_keyframes": 103,
+    "accepted": 0,
+    "stats": {
+      "queries": 73,
+      "candidates_retrieved": 355,
+      "rejected_normalized_similarity": 339,
+      "rejected_too_few_matches": 16,
+      "rejected_geometry": 0,
+      "rejected_cooldown": 0,
+      "scale_estimation_failed": 0,
+      "rejected_large_scale": 0,
+      "accepted": 0,
+      "mean_matches_per_candidate": 10.6,
+      "mean_inliers_per_accepted": null
+    },
+    "closures": []
+  },
+  "optimization": null,
+  "evaluation_raw": {
+    "label": "raw_vo",
+    "path_length_m": 231.273,
+    "reference_path_length_m": 231.273,
+    "ate_aligned": {
+      "rmse": 2.798173,
+      "mean": 2.574581,
+      "median": 2.463852,
+      "std": 1.096039,
+      "min": 1.087859,
+      "max": 5.20281,
+      "n": 300,
+      "alignment": "sim3",
+      "alignment_scale": 1.032378
+    },
+    "ate_unaligned": {
+      "rmse": 5.62457,
+      "mean": 3.611385,
+      "median": 0.917046,
+      "std": 4.31204,
+      "min": 0.0,
+      "max": 13.896827,
+      "n": 300,
+      "alignment": "none",
+      "alignment_scale": 1.0
+    },
+    "rpe": {
+      "1": {
+        "delta": 1,
+        "n": 299,
+        "trans_rmse": 0.053361,
+        "trans_mean": 0.035867,
+        "trans_median": 0.029367,
+        "trans_max": 0.540481,
+        "rot_rmse_deg": 0.235314,
+        "rot_mean_deg": 0.066963,
+        "rot_median_deg": 0.038974,
+        "rot_max_deg": 3.020098
+      },
+      "10": {
+        "delta": 10,
+        "n": 290,
+        "trans_rmse": 0.316513,
+        "trans_mean": 0.301569,
+        "trans_median": 0.277066,
+        "trans_max": 0.776607,
+        "rot_rmse_deg": 0.836197,
+        "rot_mean_deg": 0.364492,
+        "rot_median_deg": 0.16123,
+        "rot_max_deg": 4.459358
+      },
+      "100": {
+        "delta": 100,
+        "n": 200,
+        "trans_rmse": 3.127766,
+        "trans_mean": 2.907341,
+        "trans_median": 2.676554,
+        "trans_max": 6.059943,
+        "rot_rmse_deg": 4.424286,
+        "rot_mean_deg": 3.651398,
+        "rot_median_deg": 3.375307,
+        "rot_max_deg": 6.961312
+      }
+    },
+    "drift": {
+      "translation_pct": 4.5718,
+      "rotation_deg_per_m": 0.04358075,
+      "rotation_deg_per_100m": 4.35808,
+      "n_segments": 23,
+      "per_length": {
+        "100": [
+          4.654,
+          0.04607395
+        ],
+        "200": [
+          4.2759,
+          0.03460523
+        ]
+      }
+    }
+  },
+  "evaluation_optimized": null,
+  "timing": {
+    "total_runtime_s": 27.15,
+    "avg_frame_latency_ms": 90.501,
+    "fps": 11.05,
+    "stages": {
+      "detect": {
+        "total_s": 2.4091,
+        "mean_ms": 8.03,
+        "max_ms": 190.456,
+        "calls": 300
+      },
+      "loop_detect": {
+        "total_s": 0.1683,
+        "mean_ms": 168.302,
+        "max_ms": 168.302,
+        "calls": 1
+      },
+      "loop_index": {
+        "total_s": 0.7437,
+        "mean_ms": 743.718,
+        "max_ms": 743.718,
+        "calls": 1
+      },
+      "match": {
+        "total_s": 2.6182,
+        "mean_ms": 8.757,
+        "max_ms": 36.374,
+        "calls": 299
+      },
+      "pose": {
+        "total_s": 7.8537,
+        "mean_ms": 26.266,
+        "max_ms": 47.099,
+        "calls": 299
+      },
+      "vocabulary": {
+        "total_s": 12.4115,
+        "mean_ms": 12411.504,
+        "max_ms": 12411.504,
+        "calls": 1
+      }
+    }
+  },
+  "environment": {
+    "generated_utc": "2026-10-24T23:14:32+00:00",
+    "python": "3.12.3",
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+    "seed": 0
+  }
+}
