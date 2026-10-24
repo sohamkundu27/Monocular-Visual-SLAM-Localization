@@ -1,0 +1,1958 @@
+{
+ "configs": {
+  "default": {
+   "yaml": "dataset:\n  path: data/kitti/dataset\n  sequence: '00'\n  camera: image_0\n  max_frames: null\n  frame_step: 1\n  start_frame: 0\n  grayscale: true\nfeatures:\n  detector: orb\n  max_features: 3000\n  fast_threshold: 20\n  scale_factor: 1.2\n  n_levels: 8\n  edge_threshold: 31\n  score_type: 0\n  clahe: false\nmatcher:\n  matcher: bf\n  use_ratio_test: true\n  ratio: 0.75\n  cross_check: true\n  max_distance: 64.0\n  min_matches: 20\nodometry:\n  ransac_method: magsac\n  ransac_threshold_px: 0.5\n  ransac_confidence: 0.999\n  ransac_max_iters: 2000\n  cheirality_distance: 200.0\n  min_inliers: 30\n  min_inlier_ratio: 0.3\n  max_rotation_deg: 30.0\n  min_parallax_deg: 0.0\n  min_flow_px: 0.7\n  homography_ratio_threshold: 0.45\n  reject_degenerate: false\n  scale_source: ground_truth\n  constant_scale: 0.85\n  min_scale: 0.001\n  max_scale: 10.0\nkeyframes:\n  every_n_frames: 5\n  min_translation_m: 2.0\n  min_rotation_deg: 10.0\nloop_closure:\n  enabled: true\n  vocabulary_size: 1024\n  vocabulary_train_descriptors: 80000\n  min_keyframe_separation: 30\n  min_path_separation_m: 30.0\n  top_k: 5\n  min_similarity: 0.2\n  similarity_ratio: 0.85\n  min_matches: 60\n  min_inliers: 40\n  min_inlier_ratio: 0.35\n  cooldown_keyframes: 10\n  max_loops: 0\n  min_scale_points: 15\n  min_scale_baseline_m: 0.5\n  scale_neighbour_search: 5\n  min_loop_scale_m: 0.05\n  max_loop_scale_m: 10.0\n  require_measured_scale: true\npose_graph:\n  prior_sigma_rot: 0.0001\n  prior_sigma_trans: 0.0001\n  odom_sigma_rot: 0.02\n  odom_sigma_trans: 0.1\n  loop_sigma_rot: 0.05\n  loop_sigma_trans: 0.3\n  robust_loop_kernel: true\n  huber_k: 1.345\n  optimizer: levenberg_marquardt\n  max_iterations: 100\n  relative_error_tol: 1.0e-05\n  absolute_error_tol: 1.0e-05\n  verbose: false\nevaluation:\n  alignment: sim3\n  rpe_deltas:\n  - 1\n  - 10\n  - 100\n  drift_segment_lengths_m:\n  - 100.0\n  - 200.0\n  - 300.0\n  - 400.0\n  - 500.0\n  - 600.0\n  - 700.0\n  - 800.0\noutput:\n  root: outputs\n  run_name: sequence_{sequence}\n  save_plots: true\n  save_diagnostics: true\n  dpi: 150\n  plot_format: png\n  plot_3d: true\nruntime:\n  seed: 0\n  log_level: INFO\n  progress_interval: 250\n",
+   "dict": {
+    "dataset": {
+     "path": "data/kitti/dataset",
+     "sequence": "00",
+     "camera": "image_0",
+     "max_frames": null,
+     "frame_step": 1,
+     "start_frame": 0,
+     "grayscale": true
+    },
+    "features": {
+     "detector": "orb",
+     "max_features": 3000,
+     "fast_threshold": 20,
+     "scale_factor": 1.2,
+     "n_levels": 8,
+     "edge_threshold": 31,
+     "score_type": 0,
+     "clahe": false
+    },
+    "matcher": {
+     "matcher": "bf",
+     "use_ratio_test": true,
+     "ratio": 0.75,
+     "cross_check": true,
+     "max_distance": 64.0,
+     "min_matches": 20
+    },
+    "odometry": {
+     "ransac_method": "magsac",
+     "ransac_threshold_px": 0.5,
+     "ransac_confidence": 0.999,
+     "ransac_max_iters": 2000,
+     "cheirality_distance": 200.0,
+     "min_inliers": 30,
+     "min_inlier_ratio": 0.3,
+     "max_rotation_deg": 30.0,
+     "min_parallax_deg": 0.0,
+     "min_flow_px": 0.7,
+     "homography_ratio_threshold": 0.45,
+     "reject_degenerate": false,
+     "scale_source": "ground_truth",
+     "constant_scale": 0.85,
+     "min_scale": 0.001,
+     "max_scale": 10.0
+    },
+    "keyframes": {
+     "every_n_frames": 5,
+     "min_translation_m": 2.0,
+     "min_rotation_deg": 10.0
+    },
+    "loop_closure": {
+     "enabled": true,
+     "vocabulary_size": 1024,
+     "vocabulary_train_descriptors": 80000,
+     "min_keyframe_separation": 30,
+     "min_path_separation_m": 30.0,
+     "top_k": 5,
+     "min_similarity": 0.2,
+     "similarity_ratio": 0.85,
+     "min_matches": 60,
+     "min_inliers": 40,
+     "min_inlier_ratio": 0.35,
+     "cooldown_keyframes": 10,
+     "max_loops": 0,
+     "min_scale_points": 15,
+     "min_scale_baseline_m": 0.5,
+     "scale_neighbour_search": 5,
+     "min_loop_scale_m": 0.05,
+     "max_loop_scale_m": 10.0,
+     "require_measured_scale": true
+    },
+    "pose_graph": {
+     "prior_sigma_rot": 0.0001,
+     "prior_sigma_trans": 0.0001,
+     "odom_sigma_rot": 0.02,
+     "odom_sigma_trans": 0.1,
+     "loop_sigma_rot": 0.05,
+     "loop_sigma_trans": 0.3,
+     "robust_loop_kernel": true,
+     "huber_k": 1.345,
+     "optimizer": "levenberg_marquardt",
+     "max_iterations": 100,
+     "relative_error_tol": 1e-05,
+     "absolute_error_tol": 1e-05,
+     "verbose": false
+    },
+    "evaluation": {
+     "alignment": "sim3",
+     "rpe_deltas": [
+      1,
+      10,
+      100
+     ],
+     "drift_segment_lengths_m": [
+      100.0,
+      200.0,
+      300.0,
+      400.0,
+      500.0,
+      600.0,
+      700.0,
+      800.0
+     ]
+    },
+    "output": {
+     "root": "outputs",
+     "run_name": "sequence_{sequence}",
+     "save_plots": true,
+     "save_diagnostics": true,
+     "dpi": 150,
+     "plot_format": "png",
+     "plot_3d": true
+    },
+    "runtime": {
+     "seed": 0,
+     "log_level": "INFO",
+     "progress_interval": 250
+    }
+   }
+  },
+  "kitti": {
+   "yaml": "dataset:\n  path: data/kitti/dataset\n  sequence: '00'\n  camera: image_0\n  max_frames: null\n  frame_step: 1\n  start_frame: 0\n  grayscale: true\nfeatures:\n  detector: orb\n  max_features: 3000\n  fast_threshold: 20\n  scale_factor: 1.2\n  n_levels: 8\n  edge_threshold: 31\n  score_type: 0\n  clahe: false\nmatcher:\n  matcher: bf\n  use_ratio_test: true\n  ratio: 0.75\n  cross_check: true\n  max_distance: 64.0\n  min_matches: 20\nodometry:\n  ransac_method: magsac\n  ransac_threshold_px: 0.5\n  ransac_confidence: 0.999\n  ransac_max_iters: 2000\n  cheirality_distance: 200.0\n  min_inliers: 30\n  min_inlier_ratio: 0.3\n  max_rotation_deg: 30.0\n  min_parallax_deg: 0.0\n  min_flow_px: 0.7\n  homography_ratio_threshold: 0.45\n  reject_degenerate: false\n  scale_source: ground_truth\n  constant_scale: 0.85\n  min_scale: 0.001\n  max_scale: 10.0\nkeyframes:\n  every_n_frames: 5\n  min_translation_m: 2.0\n  min_rotation_deg: 10.0\nloop_closure:\n  enabled: true\n  vocabulary_size: 1024\n  vocabulary_train_descriptors: 80000\n  min_keyframe_separation: 30\n  min_path_separation_m: 30.0\n  top_k: 5\n  min_similarity: 0.2\n  similarity_ratio: 0.85\n  min_matches: 60\n  min_inliers: 40\n  min_inlier_ratio: 0.35\n  cooldown_keyframes: 10\n  max_loops: 0\n  min_scale_points: 15\n  min_scale_baseline_m: 0.5\n  scale_neighbour_search: 5\n  min_loop_scale_m: 0.05\n  max_loop_scale_m: 10.0\n  require_measured_scale: true\npose_graph:\n  prior_sigma_rot: 0.0001\n  prior_sigma_trans: 0.0001\n  odom_sigma_rot: 0.02\n  odom_sigma_trans: 0.1\n  loop_sigma_rot: 0.05\n  loop_sigma_trans: 0.3\n  robust_loop_kernel: true\n  huber_k: 1.345\n  optimizer: levenberg_marquardt\n  max_iterations: 100\n  relative_error_tol: 1.0e-05\n  absolute_error_tol: 1.0e-05\n  verbose: false\nevaluation:\n  alignment: sim3\n  rpe_deltas:\n  - 1\n  - 10\n  - 100\n  drift_segment_lengths_m:\n  - 100.0\n  - 200.0\n  - 300.0\n  - 400.0\n  - 500.0\n  - 600.0\n  - 700.0\n  - 800.0\noutput:\n  root: outputs\n  run_name: sequence_{sequence}\n  save_plots: true\n  save_diagnostics: true\n  dpi: 150\n  plot_format: png\n  plot_3d: true\nruntime:\n  seed: 0\n  log_level: INFO\n  progress_interval: 250\n",
+   "dict": {
+    "dataset": {
+     "path": "data/kitti/dataset",
+     "sequence": "00",
+     "camera": "image_0",
+     "max_frames": null,
+     "frame_step": 1,
+     "start_frame": 0,
+     "grayscale": true
+    },
+    "features": {
+     "detector": "orb",
+     "max_features": 3000,
+     "fast_threshold": 20,
+     "scale_factor": 1.2,
+     "n_levels": 8,
+     "edge_threshold": 31,
+     "score_type": 0,
+     "clahe": false
+    },
+    "matcher": {
+     "matcher": "bf",
+     "use_ratio_test": true,
+     "ratio": 0.75,
+     "cross_check": true,
+     "max_distance": 64.0,
+     "min_matches": 20
+    },
+    "odometry": {
+     "ransac_method": "magsac",
+     "ransac_threshold_px": 0.5,
+     "ransac_confidence": 0.999,
+     "ransac_max_iters": 2000,
+     "cheirality_distance": 200.0,
+     "min_inliers": 30,
+     "min_inlier_ratio": 0.3,
+     "max_rotation_deg": 30.0,
+     "min_parallax_deg": 0.0,
+     "min_flow_px": 0.7,
+     "homography_ratio_threshold": 0.45,
+     "reject_degenerate": false,
+     "scale_source": "ground_truth",
+     "constant_scale": 0.85,
+     "min_scale": 0.001,
+     "max_scale": 10.0
+    },
+    "keyframes": {
+     "every_n_frames": 5,
+     "min_translation_m": 2.0,
+     "min_rotation_deg": 10.0
+    },
+    "loop_closure": {
+     "enabled": true,
+     "vocabulary_size": 1024,
+     "vocabulary_train_descriptors": 80000,
+     "min_keyframe_separation": 30,
+     "min_path_separation_m": 30.0,
+     "top_k": 5,
+     "min_similarity": 0.2,
+     "similarity_ratio": 0.85,
+     "min_matches": 60,
+     "min_inliers": 40,
+     "min_inlier_ratio": 0.35,
+     "cooldown_keyframes": 10,
+     "max_loops": 0,
+     "min_scale_points": 15,
+     "min_scale_baseline_m": 0.5,
+     "scale_neighbour_search": 5,
+     "min_loop_scale_m": 0.05,
+     "max_loop_scale_m": 10.0,
+     "require_measured_scale": true
+    },
+    "pose_graph": {
+     "prior_sigma_rot": 0.0001,
+     "prior_sigma_trans": 0.0001,
+     "odom_sigma_rot": 0.02,
+     "odom_sigma_trans": 0.1,
+     "loop_sigma_rot": 0.05,
+     "loop_sigma_trans": 0.3,
+     "robust_loop_kernel": true,
+     "huber_k": 1.345,
+     "optimizer": "levenberg_marquardt",
+     "max_iterations": 100,
+     "relative_error_tol": 1e-05,
+     "absolute_error_tol": 1e-05,
+     "verbose": false
+    },
+    "evaluation": {
+     "alignment": "sim3",
+     "rpe_deltas": [
+      1,
+      10,
+      100
+     ],
+     "drift_segment_lengths_m": [
+      100.0,
+      200.0,
+      300.0,
+      400.0,
+      500.0,
+      600.0,
+      700.0,
+      800.0
+     ]
+    },
+    "output": {
+     "root": "outputs",
+     "run_name": "sequence_{sequence}",
+     "save_plots": true,
+     "save_diagnostics": true,
+     "dpi": 150,
+     "plot_format": "png",
+     "plot_3d": true
+    },
+    "runtime": {
+     "seed": 0,
+     "log_level": "INFO",
+     "progress_interval": 250
+    }
+   }
+  },
+  "odd": {
+   "yaml": "dataset:\n  path: 'with: colon'\n  sequence: '07'\n  camera: 'yes'\n  max_frames: 300\n  frame_step: 1\n  start_frame: 0\n  grayscale: true\nfeatures:\n  detector: '#hash'\n  max_features: 3000\n  fast_threshold: 20\n  scale_factor: 1.2\n  n_levels: 8\n  edge_threshold: 31\n  score_type: 0\n  clahe: false\nmatcher:\n  matcher: 'tail #comment'\n  use_ratio_test: true\n  ratio: 0.75\n  cross_check: true\n  max_distance: 64.0\n  min_matches: 20\nodometry:\n  ransac_method: ' lead'\n  ransac_threshold_px: 0.5\n  ransac_confidence: 0.999\n  ransac_max_iters: 2000\n  cheirality_distance: 200.0\n  min_inliers: 30\n  min_inlier_ratio: 0.3\n  max_rotation_deg: 30.0\n  min_parallax_deg: 0.0\n  min_flow_px: 0.7\n  homography_ratio_threshold: 0.45\n  reject_degenerate: false\n  scale_source: 'trail '\n  constant_scale: 0.85\n  min_scale: 1.0e-07\n  max_scale: 1.0e+16\nkeyframes:\n  every_n_frames: 5\n  min_translation_m: 2.0\n  min_rotation_deg: 10.0\nloop_closure:\n  enabled: true\n  vocabulary_size: 1024\n  vocabulary_train_descriptors: 80000\n  min_keyframe_separation: 30\n  min_path_separation_m: 30.0\n  top_k: 5\n  min_similarity: 0.2\n  similarity_ratio: 0.85\n  min_matches: 60\n  min_inliers: 40\n  min_inlier_ratio: 0.35\n  cooldown_keyframes: 10\n  max_loops: 0\n  min_scale_points: 15\n  min_scale_baseline_m: 0.5\n  scale_neighbour_search: 5\n  min_loop_scale_m: 0.05\n  max_loop_scale_m: 10.0\n  require_measured_scale: true\npose_graph:\n  prior_sigma_rot: 0.0001\n  prior_sigma_trans: 0.0001\n  odom_sigma_rot: 0.02\n  odom_sigma_trans: 0.1\n  loop_sigma_rot: 0.05\n  loop_sigma_trans: 0.3\n  robust_loop_kernel: true\n  huber_k: 2.0\n  optimizer: levenberg_marquardt\n  max_iterations: 100\n  relative_error_tol: 1.0e-05\n  absolute_error_tol: 1.0e-05\n  verbose: false\nevaluation:\n  alignment: 'null'\n  rpe_deltas:\n  - 2\n  - 4\n  drift_segment_lengths_m:\n  - 50.0\n  - 1.0e-05\n  - 1.0e+16\n  - 0.1\noutput:\n  root: '~'\n  run_name: '{sequence}_run'\n  save_plots: true\n  save_diagnostics: true\n  dpi: 150\n  plot_format: -dash\n  plot_3d: true\nruntime:\n  seed: 0\n  log_level: 1e3\n  progress_interval: 250\n",
+   "dict": {
+    "dataset": {
+     "path": "with: colon",
+     "sequence": "07",
+     "camera": "yes",
+     "max_frames": 300,
+     "frame_step": 1,
+     "start_frame": 0,
+     "grayscale": true
+    },
+    "features": {
+     "detector": "#hash",
+     "max_features": 3000,
+     "fast_threshold": 20,
+     "scale_factor": 1.2,
+     "n_levels": 8,
+     "edge_threshold": 31,
+     "score_type": 0,
+     "clahe": false
+    },
+    "matcher": {
+     "matcher": "tail #comment",
+     "use_ratio_test": true,
+     "ratio": 0.75,
+     "cross_check": true,
+     "max_distance": 64.0,
+     "min_matches": 20
+    },
+    "odometry": {
+     "ransac_method": " lead",
+     "ransac_threshold_px": 0.5,
+     "ransac_confidence": 0.999,
+     "ransac_max_iters": 2000,
+     "cheirality_distance": 200.0,
+     "min_inliers": 30,
+     "min_inlier_ratio": 0.3,
+     "max_rotation_deg": 30.0,
+     "min_parallax_deg": 0.0,
+     "min_flow_px": 0.7,
+     "homography_ratio_threshold": 0.45,
+     "reject_degenerate": false,
+     "scale_source": "trail ",
+     "constant_scale": 0.85,
+     "min_scale": 1e-07,
+     "max_scale": 1e+16
+    },
+    "keyframes": {
+     "every_n_frames": 5,
+     "min_translation_m": 2.0,
+     "min_rotation_deg": 10.0
+    },
+    "loop_closure": {
+     "enabled": true,
+     "vocabulary_size": 1024,
+     "vocabulary_train_descriptors": 80000,
+     "min_keyframe_separation": 30,
+     "min_path_separation_m": 30.0,
+     "top_k": 5,
+     "min_similarity": 0.2,
+     "similarity_ratio": 0.85,
+     "min_matches": 60,
+     "min_inliers": 40,
+     "min_inlier_ratio": 0.35,
+     "cooldown_keyframes": 10,
+     "max_loops": 0,
+     "min_scale_points": 15,
+     "min_scale_baseline_m": 0.5,
+     "scale_neighbour_search": 5,
+     "min_loop_scale_m": 0.05,
+     "max_loop_scale_m": 10.0,
+     "require_measured_scale": true
+    },
+    "pose_graph": {
+     "prior_sigma_rot": 0.0001,
+     "prior_sigma_trans": 0.0001,
+     "odom_sigma_rot": 0.02,
+     "odom_sigma_trans": 0.1,
+     "loop_sigma_rot": 0.05,
+     "loop_sigma_trans": 0.3,
+     "robust_loop_kernel": true,
+     "huber_k": 2.0,
+     "optimizer": "levenberg_marquardt",
+     "max_iterations": 100,
+     "relative_error_tol": 1e-05,
+     "absolute_error_tol": 1e-05,
+     "verbose": false
+    },
+    "evaluation": {
+     "alignment": "null",
+     "rpe_deltas": [
+      2,
+      4
+     ],
+     "drift_segment_lengths_m": [
+      50.0,
+      1e-05,
+      1e+16,
+      0.1
+     ]
+    },
+    "output": {
+     "root": "~",
+     "run_name": "{sequence}_run",
+     "save_plots": true,
+     "save_diagnostics": true,
+     "dpi": 150,
+     "plot_format": "-dash",
+     "plot_3d": true
+    },
+    "runtime": {
+     "seed": 0,
+     "log_level": "1e3",
+     "progress_interval": 250
+    }
+   }
+  },
+  "odd2": {
+   "yaml": "dataset:\n  path: a'b\n  sequence: '1:30'\n  camera: 'x: y'\n  max_frames: null\n  frame_step: 1\n  start_frame: 0\n  grayscale: true\nfeatures:\n  detector: '@at'\n  max_features: 3000\n  fast_threshold: 20\n  scale_factor: 1.2\n  n_levels: 8\n  edge_threshold: 31\n  score_type: 0\n  clahe: false\nmatcher:\n  matcher: it's\n  use_ratio_test: true\n  ratio: 0.75\n  cross_check: true\n  max_distance: 64.0\n  min_matches: 20\nodometry:\n  ransac_method: ''\n  ransac_threshold_px: 0.5\n  ransac_confidence: 0.999\n  ransac_max_iters: 2000\n  cheirality_distance: 200.0\n  min_inliers: 30\n  min_inlier_ratio: 0.3\n  max_rotation_deg: 30.0\n  min_parallax_deg: 0.0\n  min_flow_px: 0.7\n  homography_ratio_threshold: 0.45\n  reject_degenerate: false\n  scale_source: '123'\n  constant_scale: 0.85\n  min_scale: 0.001\n  max_scale: 10.0\nkeyframes:\n  every_n_frames: 5\n  min_translation_m: 2.0\n  min_rotation_deg: 10.0\nloop_closure:\n  enabled: true\n  vocabulary_size: 1024\n  vocabulary_train_descriptors: 80000\n  min_keyframe_separation: 30\n  min_path_separation_m: 30.0\n  top_k: 5\n  min_similarity: 0.2\n  similarity_ratio: 0.85\n  min_matches: 60\n  min_inliers: 40\n  min_inlier_ratio: 0.35\n  cooldown_keyframes: 10\n  max_loops: 0\n  min_scale_points: 15\n  min_scale_baseline_m: 0.5\n  scale_neighbour_search: 5\n  min_loop_scale_m: 0.05\n  max_loop_scale_m: 10.0\n  require_measured_scale: true\npose_graph:\n  prior_sigma_rot: 0.0001\n  prior_sigma_trans: 0.0001\n  odom_sigma_rot: 0.02\n  odom_sigma_trans: 0.1\n  loop_sigma_rot: 0.05\n  loop_sigma_trans: 0.3\n  robust_loop_kernel: true\n  huber_k: 1.345\n  optimizer: levenberg_marquardt\n  max_iterations: 100\n  relative_error_tol: 1.0e-05\n  absolute_error_tol: 1.0e-05\n  verbose: false\nevaluation:\n  alignment: 'True'\n  rpe_deltas:\n  - 1\n  - 10\n  - 100\n  drift_segment_lengths_m:\n  - 100.0\n  - 200.0\n  - 300.0\n  - 400.0\n  - 500.0\n  - 600.0\n  - 700.0\n  - 800.0\noutput:\n  root: '[list]'\n  run_name: '{braces}'\n  save_plots: true\n  save_diagnostics: true\n  dpi: 150\n  plot_format: \"a\\tb\"\n  plot_3d: true\nruntime:\n  seed: 0\n  log_level: '0x1F'\n  progress_interval: 250\n",
+   "dict": {
+    "dataset": {
+     "path": "a'b",
+     "sequence": "1:30",
+     "camera": "x: y",
+     "max_frames": null,
+     "frame_step": 1,
+     "start_frame": 0,
+     "grayscale": true
+    },
+    "features": {
+     "detector": "@at",
+     "max_features": 3000,
+     "fast_threshold": 20,
+     "scale_factor": 1.2,
+     "n_levels": 8,
+     "edge_threshold": 31,
+     "score_type": 0,
+     "clahe": false
+    },
+    "matcher": {
+     "matcher": "it's",
+     "use_ratio_test": true,
+     "ratio": 0.75,
+     "cross_check": true,
+     "max_distance": 64.0,
+     "min_matches": 20
+    },
+    "odometry": {
+     "ransac_method": "",
+     "ransac_threshold_px": 0.5,
+     "ransac_confidence": 0.999,
+     "ransac_max_iters": 2000,
+     "cheirality_distance": 200.0,
+     "min_inliers": 30,
+     "min_inlier_ratio": 0.3,
+     "max_rotation_deg": 30.0,
+     "min_parallax_deg": 0.0,
+     "min_flow_px": 0.7,
+     "homography_ratio_threshold": 0.45,
+     "reject_degenerate": false,
+     "scale_source": "123",
+     "constant_scale": 0.85,
+     "min_scale": 0.001,
+     "max_scale": 10.0
+    },
+    "keyframes": {
+     "every_n_frames": 5,
+     "min_translation_m": 2.0,
+     "min_rotation_deg": 10.0
+    },
+    "loop_closure": {
+     "enabled": true,
+     "vocabulary_size": 1024,
+     "vocabulary_train_descriptors": 80000,
+     "min_keyframe_separation": 30,
+     "min_path_separation_m": 30.0,
+     "top_k": 5,
+     "min_similarity": 0.2,
+     "similarity_ratio": 0.85,
+     "min_matches": 60,
+     "min_inliers": 40,
+     "min_inlier_ratio": 0.35,
+     "cooldown_keyframes": 10,
+     "max_loops": 0,
+     "min_scale_points": 15,
+     "min_scale_baseline_m": 0.5,
+     "scale_neighbour_search": 5,
+     "min_loop_scale_m": 0.05,
+     "max_loop_scale_m": 10.0,
+     "require_measured_scale": true
+    },
+    "pose_graph": {
+     "prior_sigma_rot": 0.0001,
+     "prior_sigma_trans": 0.0001,
+     "odom_sigma_rot": 0.02,
+     "odom_sigma_trans": 0.1,
+     "loop_sigma_rot": 0.05,
+     "loop_sigma_trans": 0.3,
+     "robust_loop_kernel": true,
+     "huber_k": 1.345,
+     "optimizer": "levenberg_marquardt",
+     "max_iterations": 100,
+     "relative_error_tol": 1e-05,
+     "absolute_error_tol": 1e-05,
+     "verbose": false
+    },
+    "evaluation": {
+     "alignment": "True",
+     "rpe_deltas": [
+      1,
+      10,
+      100
+     ],
+     "drift_segment_lengths_m": [
+      100.0,
+      200.0,
+      300.0,
+      400.0,
+      500.0,
+      600.0,
+      700.0,
+      800.0
+     ]
+    },
+    "output": {
+     "root": "[list]",
+     "run_name": "{braces}",
+     "save_plots": true,
+     "save_diagnostics": true,
+     "dpi": 150,
+     "plot_format": "a\tb",
+     "plot_3d": true
+    },
+    "runtime": {
+     "seed": 0,
+     "log_level": "0x1F",
+     "progress_interval": 250
+    }
+   }
+  }
+ },
+ "coercion": [
+  {
+   "key": "loop_closure.enabled",
+   "input": true,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": true
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": false,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": false
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "true",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": true
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "True",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": true
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": " yes ",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": true
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "no",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": false
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "on",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": true
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "OFF",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": false
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "1",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": true
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "0",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "bool",
+     "value": false
+    }
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": "maybe",
+   "out": {
+    "ok": false,
+    "error": "Config key 'loop_closure.enabled' expects a boolean, got 'maybe'"
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": 1,
+   "out": {
+    "ok": false,
+    "error": "Config key 'loop_closure.enabled' expects a boolean, got 1"
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": 0,
+   "out": {
+    "ok": false,
+    "error": "Config key 'loop_closure.enabled' expects a boolean, got 0"
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": 1.0,
+   "out": {
+    "ok": false,
+    "error": "Config key 'loop_closure.enabled' expects a boolean, got 1.0"
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": null,
+   "out": {
+    "ok": false,
+    "error": "Config key 'loop_closure.enabled' does not accept null"
+   }
+  },
+  {
+   "key": "loop_closure.enabled",
+   "input": [
+    true
+   ],
+   "out": {
+    "ok": false,
+    "error": "Config key 'loop_closure.enabled' expects a boolean, got [True]"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": 40,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 40
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "40",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 40
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": " 40 ",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 40
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "4_0",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 40
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "+5",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 5
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "-3",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": -3
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": 3.7,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 3
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": -3.7,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": -3
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "3.7",
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got '3.7'"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": true,
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got True"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": false,
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got False"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": null,
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' does not accept null"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": [
+    1
+   ],
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got [1]"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "many",
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got 'many'"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "1e3",
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got '1e3'"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": 1000.0,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 1000
+    }
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": "0x10",
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got '0x10'"
+   }
+  },
+  {
+   "key": "odometry.min_inliers",
+   "input": {
+    "a": 1
+   },
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.min_inliers' expects an int, got {'a': 1}"
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": 1,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 1.0
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "1",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 1.0
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "1e-4",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 0.0001
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "1E5",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 100000.0
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": " 2.5 ",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 2.5
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": ".5",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 0.5
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "5.",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 5.0
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "inf",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": {
+      "float": "inf"
+     }
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "-Infinity",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": {
+      "float": "-inf"
+     }
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "nan",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": {
+      "float": "nan"
+     }
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": true,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 1.0
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "abc",
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.ransac_threshold_px' expects a float, got 'abc'"
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": null,
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.ransac_threshold_px' does not accept null"
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": "1_000.5",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 1000.5
+    }
+   }
+  },
+  {
+   "key": "odometry.ransac_threshold_px",
+   "input": [
+    1.0
+   ],
+   "out": {
+    "ok": false,
+    "error": "Config key 'odometry.ransac_threshold_px' expects a float, got [1.0]"
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": 5,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "5"
+    }
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": 1.5,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "1.5"
+    }
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": true,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "True"
+    }
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": [
+    1,
+    2
+   ],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "[1, 2]"
+    }
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": {
+    "a": 1
+   },
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "{'a': 1}"
+    }
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": "05",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "05"
+    }
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": null,
+   "out": {
+    "ok": false,
+    "error": "Config key 'dataset.sequence' does not accept null"
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": 1e+16,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "1e+16"
+    }
+   }
+  },
+  {
+   "key": "dataset.sequence",
+   "input": [
+    1,
+    "x",
+    null,
+    2.5
+   ],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "str",
+     "value": "[1, 'x', None, 2.5]"
+    }
+   }
+  },
+  {
+   "key": "dataset.max_frames",
+   "input": null,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "NoneType",
+     "value": null
+    }
+   }
+  },
+  {
+   "key": "dataset.max_frames",
+   "input": 7,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 7
+    }
+   }
+  },
+  {
+   "key": "dataset.max_frames",
+   "input": "7",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 7
+    }
+   }
+  },
+  {
+   "key": "dataset.max_frames",
+   "input": 7.9,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "int",
+     "value": 7
+    }
+   }
+  },
+  {
+   "key": "matcher.max_distance",
+   "input": null,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "NoneType",
+     "value": null
+    }
+   }
+  },
+  {
+   "key": "matcher.max_distance",
+   "input": 64,
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 64.0
+    }
+   }
+  },
+  {
+   "key": "matcher.max_distance",
+   "input": "32.5",
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "float",
+     "value": 32.5
+    }
+   }
+  },
+  {
+   "key": "evaluation.rpe_deltas",
+   "input": [
+    1,
+    2,
+    3
+   ],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "tuple",
+     "value": {
+      "tuple": [
+       1,
+       2,
+       3
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "evaluation.rpe_deltas",
+   "input": [
+    1,
+    "2",
+    3.0
+   ],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "tuple",
+     "value": {
+      "tuple": [
+       1,
+       2,
+       3
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "evaluation.rpe_deltas",
+   "input": 5,
+   "out": {
+    "ok": false,
+    "error": "Config key 'evaluation.rpe_deltas' expects a list, got int"
+   }
+  },
+  {
+   "key": "evaluation.rpe_deltas",
+   "input": "abc",
+   "out": {
+    "ok": false,
+    "error": "Config key 'evaluation.rpe_deltas' expects a list, got str"
+   }
+  },
+  {
+   "key": "evaluation.rpe_deltas",
+   "input": [],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "tuple",
+     "value": {
+      "tuple": []
+     }
+    }
+   }
+  },
+  {
+   "key": "evaluation.rpe_deltas",
+   "input": [
+    null
+   ],
+   "out": {
+    "ok": false,
+    "error": "Config key 'evaluation.rpe_deltas' does not accept null"
+   }
+  },
+  {
+   "key": "evaluation.drift_segment_lengths_m",
+   "input": [
+    100,
+    200.5
+   ],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "tuple",
+     "value": {
+      "tuple": [
+       100.0,
+       200.5
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "evaluation.drift_segment_lengths_m",
+   "input": [
+    "1e2"
+   ],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "tuple",
+     "value": {
+      "tuple": [
+       100.0
+      ]
+     }
+    }
+   }
+  },
+  {
+   "key": "evaluation.drift_segment_lengths_m",
+   "input": [
+    true
+   ],
+   "out": {
+    "ok": true,
+    "result": {
+     "type": "tuple",
+     "value": {
+      "tuple": [
+       1.0
+      ]
+     }
+    }
+   }
+  }
+ ],
+ "structural": [
+  {
+   "input": {
+    "odometery": {}
+   },
+   "ok": false,
+   "error": "Unknown config key(s) at 'root': ['odometery']. Valid keys: ['dataset', 'evaluation', 'features', 'keyframes', 'loop_closure', 'matcher', 'odometry', 'output', 'pose_graph', 'runtime']"
+  },
+  {
+   "input": {
+    "odometry": {
+     "min_inlyers": 3,
+     "zzz": 1
+    }
+   },
+   "ok": false,
+   "error": "Unknown config key(s) at 'odometry': ['min_inlyers', 'zzz']. Valid keys: ['cheirality_distance', 'constant_scale', 'homography_ratio_threshold', 'max_rotation_deg', 'max_scale', 'min_flow_px', 'min_inlier_ratio', 'min_inliers', 'min_parallax_deg', 'min_scale', 'ransac_confidence', 'ransac_max_iters', 'ransac_method', 'ransac_threshold_px', 'reject_degenerate', 'scale_source']"
+  },
+  {
+   "input": {
+    "odometry": 5
+   },
+   "ok": false,
+   "error": "Expected a mapping at 'odometry', got int"
+  },
+  {
+   "input": {
+    "odometry": null
+   },
+   "ok": false,
+   "error": "Expected a mapping at 'odometry', got NoneType"
+  },
+  {
+   "input": {
+    "odometry": [
+     1
+    ]
+   },
+   "ok": false,
+   "error": "Expected a mapping at 'odometry', got list"
+  },
+  {
+   "input": {
+    "dataset": {
+     "path": "x"
+    },
+    "bogus": 1,
+    "alpha": 2
+   },
+   "ok": false,
+   "error": "Unknown config key(s) at 'root': ['alpha', 'bogus']. Valid keys: ['dataset', 'evaluation', 'features', 'keyframes', 'loop_closure', 'matcher', 'odometry', 'output', 'pose_graph', 'runtime']"
+  }
+ ],
+ "override_errors": [
+  {
+   "input": {
+    "odometry.nope": 1
+   },
+   "ok": false,
+   "error": "Unknown config key in override: 'odometry.nope'"
+  },
+  {
+   "input": {
+    "nope.key": 1
+   },
+   "ok": false,
+   "error": "Unknown config section in override: 'nope.key'"
+  },
+  {
+   "input": {
+    "odometry.min_inliers.x": 1
+   },
+   "ok": false,
+   "error": "Unknown config section in override: 'odometry.min_inliers.x'"
+  },
+  {
+   "input": {
+    "odometry": 1
+   },
+   "ok": false,
+   "error": "Expected a mapping at 'odometry', got int"
+  },
+  {
+   "input": {
+    "dataset.sequence": null
+   },
+   "ok": true
+  }
+ ],
+ "yaml_resolution": [
+  {
+   "scalar": "00",
+   "type": "int",
+   "value": 0
+  },
+  {
+   "scalar": "0",
+   "type": "int",
+   "value": 0
+  },
+  {
+   "scalar": "007",
+   "type": "int",
+   "value": 7
+  },
+  {
+   "scalar": "08",
+   "type": "str",
+   "value": "08"
+  },
+  {
+   "scalar": "0o17",
+   "type": "str",
+   "value": "0o17"
+  },
+  {
+   "scalar": "0x1F",
+   "type": "int",
+   "value": 31
+  },
+  {
+   "scalar": "0b101",
+   "type": "int",
+   "value": 5
+  },
+  {
+   "scalar": "1_000",
+   "type": "int",
+   "value": 1000
+  },
+  {
+   "scalar": "1e-4",
+   "type": "str",
+   "value": "1e-4"
+  },
+  {
+   "scalar": "1.0e-4",
+   "type": "float",
+   "value": 0.0001
+  },
+  {
+   "scalar": "1.0E+4",
+   "type": "float",
+   "value": 10000.0
+  },
+  {
+   "scalar": ".5",
+   "type": "float",
+   "value": 0.5
+  },
+  {
+   "scalar": "5.",
+   "type": "float",
+   "value": 5.0
+  },
+  {
+   "scalar": "-1",
+   "type": "int",
+   "value": -1
+  },
+  {
+   "scalar": "+1",
+   "type": "int",
+   "value": 1
+  },
+  {
+   "scalar": "-0",
+   "type": "int",
+   "value": 0
+  },
+  {
+   "scalar": "~",
+   "type": "NoneType",
+   "value": null
+  },
+  {
+   "scalar": "null",
+   "type": "NoneType",
+   "value": null
+  },
+  {
+   "scalar": "Null",
+   "type": "NoneType",
+   "value": null
+  },
+  {
+   "scalar": "NULL",
+   "type": "NoneType",
+   "value": null
+  },
+  {
+   "scalar": "''",
+   "type": "str",
+   "value": ""
+  },
+  {
+   "scalar": "yes",
+   "type": "bool",
+   "value": true
+  },
+  {
+   "scalar": "No",
+   "type": "bool",
+   "value": false
+  },
+  {
+   "scalar": "on",
+   "type": "bool",
+   "value": true
+  },
+  {
+   "scalar": "OFF",
+   "type": "bool",
+   "value": false
+  },
+  {
+   "scalar": "y",
+   "type": "str",
+   "value": "y"
+  },
+  {
+   "scalar": "n",
+   "type": "str",
+   "value": "n"
+  },
+  {
+   "scalar": "true",
+   "type": "bool",
+   "value": true
+  },
+  {
+   "scalar": "True",
+   "type": "bool",
+   "value": true
+  },
+  {
+   "scalar": "TRUE",
+   "type": "bool",
+   "value": true
+  },
+  {
+   "scalar": "tRue",
+   "type": "str",
+   "value": "tRue"
+  },
+  {
+   "scalar": "1:30",
+   "type": "int",
+   "value": 90
+  },
+  {
+   "scalar": "1:30.5",
+   "type": "float",
+   "value": 90.5
+  },
+  {
+   "scalar": "-1:30",
+   "type": "int",
+   "value": -90
+  },
+  {
+   "scalar": ".inf",
+   "type": "float",
+   "value": {
+    "float": "inf"
+   }
+  },
+  {
+   "scalar": "-.Inf",
+   "type": "float",
+   "value": {
+    "float": "-inf"
+   }
+  },
+  {
+   "scalar": "+.INF",
+   "type": "float",
+   "value": {
+    "float": "inf"
+   }
+  },
+  {
+   "scalar": ".NaN",
+   "type": "float",
+   "value": {
+    "float": "nan"
+   }
+  },
+  {
+   "scalar": "'00'",
+   "type": "str",
+   "value": "00"
+  },
+  {
+   "scalar": "\"0x1F\"",
+   "type": "str",
+   "value": "0x1F"
+  },
+  {
+   "scalar": "image_0",
+   "type": "str",
+   "value": "image_0"
+  },
+  {
+   "scalar": "data/kitti/dataset",
+   "type": "str",
+   "value": "data/kitti/dataset"
+  },
+  {
+   "scalar": "sequence_{sequence}",
+   "type": "str",
+   "value": "sequence_{sequence}"
+  },
+  {
+   "scalar": "1.2.3",
+   "type": "str",
+   "value": "1.2.3"
+  },
+  {
+   "scalar": "0.85",
+   "type": "float",
+   "value": 0.85
+  },
+  {
+   "scalar": "1e3",
+   "type": "str",
+   "value": "1e3"
+  },
+  {
+   "scalar": "3.0e-3",
+   "type": "float",
+   "value": 0.003
+  },
+  {
+   "scalar": "12_3.4_5",
+   "type": "float",
+   "value": 123.45
+  },
+  {
+   "scalar": "-.5",
+   "type": "str",
+   "value": "-.5"
+  },
+  {
+   "scalar": "+.5e3",
+   "type": "str",
+   "value": "+.5e3"
+  },
+  {
+   "scalar": "0.",
+   "type": "float",
+   "value": 0.0
+  },
+  {
+   "scalar": "--1",
+   "type": "str",
+   "value": "--1"
+  },
+  {
+   "scalar": "1__0",
+   "type": "int",
+   "value": 10
+  },
+  {
+   "scalar": "0x_1f",
+   "type": "int",
+   "value": 31
+  },
+  {
+   "scalar": "0b",
+   "type": "str",
+   "value": "0b"
+  },
+  {
+   "scalar": "0_",
+   "type": "int",
+   "value": 0
+  },
+  {
+   "scalar": "_1",
+   "type": "str",
+   "value": "_1"
+  },
+  {
+   "scalar": "190:20:30",
+   "type": "int",
+   "value": 685230
+  },
+  {
+   "scalar": "1:60",
+   "type": "str",
+   "value": "1:60"
+  },
+  {
+   "scalar": "!!str 123",
+   "type": "str",
+   "value": "123"
+  },
+  {
+   "scalar": "!!int '5'",
+   "type": "int",
+   "value": 5
+  },
+  {
+   "scalar": "!!float 1",
+   "type": "float",
+   "value": 1.0
+  },
+  {
+   "scalar": "[1, 2]",
+   "type": "list",
+   "value": [
+    1,
+    2
+   ]
+  },
+  {
+   "scalar": "{a: 1}",
+   "type": "dict",
+   "value": {
+    "a": 1
+   }
+  },
+  {
+   "scalar": "2001-12-14",
+   "type": "date",
+   "value": "2001-12-14"
+  }
+ ],
+ "parse_scalar": [
+  {
+   "text": "true",
+   "out": {
+    "type": "bool",
+    "value": true
+   }
+  },
+  {
+   "text": "False",
+   "out": {
+    "type": "bool",
+    "value": false
+   }
+  },
+  {
+   "text": "yes",
+   "out": {
+    "type": "bool",
+    "value": true
+   }
+  },
+  {
+   "text": "off",
+   "out": {
+    "type": "bool",
+    "value": false
+   }
+  },
+  {
+   "text": "on",
+   "out": {
+    "type": "bool",
+    "value": true
+   }
+  },
+  {
+   "text": "no",
+   "out": {
+    "type": "bool",
+    "value": false
+   }
+  },
+  {
+   "text": "42",
+   "out": {
+    "type": "int",
+    "value": 42
+   }
+  },
+  {
+   "text": "-7",
+   "out": {
+    "type": "int",
+    "value": -7
+   }
+  },
+  {
+   "text": "3.5",
+   "out": {
+    "type": "float",
+    "value": 3.5
+   }
+  },
+  {
+   "text": "1e-3",
+   "out": {
+    "type": "float",
+    "value": 0.001
+   }
+  },
+  {
+   "text": "none",
+   "out": {
+    "type": "NoneType",
+    "value": null
+   }
+  },
+  {
+   "text": "null",
+   "out": {
+    "type": "NoneType",
+    "value": null
+   }
+  },
+  {
+   "text": "",
+   "out": {
+    "type": "NoneType",
+    "value": null
+   }
+  },
+  {
+   "text": "magsac",
+   "out": {
+    "type": "str",
+    "value": "magsac"
+   }
+  },
+  {
+   "text": "00",
+   "out": {
+    "type": "str",
+    "value": "00"
+   }
+  },
+  {
+   "text": "05",
+   "out": {
+    "type": "str",
+    "value": "05"
+   }
+  },
+  {
+   "text": "-05",
+   "out": {
+    "type": "str",
+    "value": "-05"
+   }
+  },
+  {
+   "text": "0",
+   "out": {
+    "type": "int",
+    "value": 0
+   }
+  },
+  {
+   "text": "-0",
+   "out": {
+    "type": "int",
+    "value": 0
+   }
+  },
+  {
+   "text": "007",
+   "out": {
+    "type": "str",
+    "value": "007"
+   }
+  },
+  {
+   "text": "1_000",
+   "out": {
+    "type": "float",
+    "value": 1000.0
+   }
+  },
+  {
+   "text": "inf",
+   "out": {
+    "type": "float",
+    "value": {
+     "float": "inf"
+    }
+   }
+  },
+  {
+   "text": "nan",
+   "out": {
+    "type": "float",
+    "value": {
+     "float": "nan"
+    }
+   }
+  },
+  {
+   "text": "-",
+   "out": {
+    "type": "str",
+    "value": "-"
+   }
+  },
+  {
+   "text": "--5",
+   "error": "ValueError: invalid literal for int() with base 10: '--5'"
+  },
+  {
+   "text": "1.5e3",
+   "out": {
+    "type": "float",
+    "value": 1500.0
+   }
+  },
+  {
+   "text": " 3",
+   "out": {
+    "type": "float",
+    "value": 3.0
+   }
+  },
+  {
+   "text": "+5",
+   "out": {
+    "type": "float",
+    "value": 5.0
+   }
+  },
+  {
+   "text": "0x10",
+   "out": {
+    "type": "str",
+    "value": "0x10"
+   }
+  },
+  {
+   "text": "NULL",
+   "out": {
+    "type": "NoneType",
+    "value": null
+   }
+  },
+  {
+   "text": "None",
+   "out": {
+    "type": "NoneType",
+    "value": null
+   }
+  }
+ ]
+}
