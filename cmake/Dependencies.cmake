@@ -15,7 +15,11 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 # The Python reference ran against cv2 4.13.0. Any 4.8+ builds, but bit-level
 # front-end parity is only expected with the same major.minor (and IPP/LAPACK
 # configuration); the parity tests skip themselves otherwise.
-find_package(OpenCV 4.8 REQUIRED COMPONENTS core imgproc imgcodecs features2d calib3d)
+# MVSLAM_OPENCV_MIN_VERSION exists so CI can build against the distribution's
+# older OpenCV (everything used here exists since 4.5); 4.8 is the supported floor.
+set(MVSLAM_OPENCV_MIN_VERSION 4.8 CACHE STRING "Minimum accepted OpenCV version")
+find_package(OpenCV ${MVSLAM_OPENCV_MIN_VERSION} REQUIRED
+    COMPONENTS core imgproc imgcodecs features2d calib3d)
 set(MVSLAM_OPENCV_TARGETS opencv_core opencv_imgproc opencv_imgcodecs opencv_features2d
     opencv_calib3d)
 message(STATUS "mvslam: OpenCV ${OpenCV_VERSION} (${OpenCV_DIR})")
