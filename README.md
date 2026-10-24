@@ -29,6 +29,7 @@ delegated to an existing SLAM framework.
 - [Performance](#performance)
 - [Results](#results)
 - [Installation](#installation)
+- [C++ build](#c-build)
 - [Dataset setup](#dataset-setup)
 - [Usage](#usage)
 - [Repository structure](#repository-structure)
@@ -562,6 +563,39 @@ python scripts/run_slam.py --help
 ```
 
 The test suite runs entirely on synthetic data and needs no dataset download.
+
+## C++ build
+
+A C++17 port of the pipeline lives alongside the Python package (`include/mvslam/`, `src/`,
+`apps/`, `tests/test_*.cpp`). It mirrors the Python module structure one-to-one and is checked
+for numerical parity against the Python implementation using golden fixtures in `tests/golden/`.
+
+**Dependency versions.** These match what the Python reference runs against, so the front end
+calls the same OpenCV code with the same LAPACK and IPP back ends:
+
+| Dependency | Version | Why this version |
+|---|---|---|
+| OpenCV | 4.13.0 | `cv2.__version__` of the `opencv-python` 4.13.0.92 wheel |
+| OpenBLAS | 0.3.15 | the BLAS/LAPACK bundled in that wheel (OpenCV's LAPACK HAL) |
+| GTSAM | 4.2.2 | the `gtsam` 4.2.2 wheel (Python pin `>=4.2,<4.3`) |
+| Boost | 1.87.0 | the Boost bundled in that `gtsam` wheel |
+| Eigen | 3.4.0 | GTSAM built with `GTSAM_USE_SYSTEM_EIGEN=ON` |
+| yaml-cpp, nlohmann_json, CLI11, GoogleTest | 0.8.0, 3.11.3, 2.4.2, 1.14.0 | fetched by CMake if not installed |
+
+OpenCV is configured like the wheel wherever that can change results: IPP ICV on, LAPACK via
+OpenBLAS on, Eigen **off**, pthreads backend, SSE3 baseline with runtime dispatch, no fast-math.
+`tools/build_deps.sh` builds all of this from source into a user-local prefix, no root needed:
+
+```bash
+tools/build_deps.sh                       # -> $HOME/opt/mvslam-deps/install
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=$HOME/opt/mvslam-deps/install
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+OpenBLAS needs a Fortran compiler for its LAPACK; pass `FC=/path/to/gfortran` if it is not on
+`PATH`. `-DMVSLAM_NATIVE=ON` enables `-march=native`. It is off by default because it changes
+floating-point results (FMA contraction) and must match how GTSAM was compiled.
 
 ---
 

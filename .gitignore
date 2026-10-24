@@ -49,3 +49,11 @@ coverage.xml
 # re-include a file inside an excluded directory.
 /outputs/*
 !/outputs/resume_metrics.md
+
+# C++ build trees and tooling
+/build/
+/build-*/
+cmake-build*/
+.cache/
+compile_commands.json
+CMakeUserPresets.json
