@@ -170,6 +170,161 @@ double rms(const std::vector<double>& values) {
     return std::sqrt(mean(squared));
 }
 
+namespace {
+
+// npysort/npysort_common.h: DOUBLE_LT, which orders NaNs after everything.
+inline bool double_less(double a, double b) { return a < b || (b != b && a == a); }
+
+// npysort/heapsort.cpp: aheapsort_<npy::double_tag>
+void aheapsort(const double* v, std::int64_t* tosort, std::int64_t n) {
+    std::int64_t* a = tosort - 1;  // 1-based indexing, as in NumPy
+    std::int64_t i, j, l, tmp;
+    for (l = n >> 1; l > 0; --l) {
+        tmp = a[l];
+        for (i = l, j = l << 1; j <= n;) {
+            if (j < n && double_less(v[a[j]], v[a[j + 1]])) {
+                j += 1;
+            }
+            if (double_less(v[tmp], v[a[j]])) {
+                a[i] = a[j];
+                i = j;
+                j += j;
+            } else {
+                break;
+            }
+        }
+        a[i] = tmp;
+    }
+    for (; n > 1;) {
+        tmp = a[n];
+        a[n] = a[1];
+        n -= 1;
+        for (i = 1, j = 2; j <= n;) {
+            if (j < n && double_less(v[a[j]], v[a[j + 1]])) {
+                j++;
+            }
+            if (double_less(v[tmp], v[a[j]])) {
+                a[i] = a[j];
+                i = j;
+                j += j;
+            } else {
+                break;
+            }
+        }
+        a[i] = tmp;
+    }
+}
+
+int get_msb(std::uint64_t unum) {
+    int depth = 0;
+    while (unum >>= 1) {
+        depth++;
+    }
+    return depth;
+}
+
+}  // namespace
+
+std::vector<std::int64_t> argsort(const std::vector<double>& values) {
+    // npysort/quicksort.cpp: aquicksort_<npy::double_tag>
+    constexpr std::int64_t kSmallQuicksort = 15;
+    constexpr int kStack = 128;
+    const auto num = static_cast<std::int64_t>(values.size());
+    std::vector<std::int64_t> order(values.size());
+    for (std::int64_t i = 0; i < num; ++i) {
+        order[static_cast<std::size_t>(i)] = i;
+    }
+    if (num < 2) {
+        return order;
+    }
+    const double* v = values.data();
+    std::int64_t* tosort = order.data();
+    std::int64_t* pl = tosort;
+    std::int64_t* pr = tosort + num - 1;
+    std::int64_t* stack[kStack];
+    std::int64_t** sptr = stack;
+    std::int64_t *pm, *pi, *pj, *pk;
+    std::int64_t vi;
+    double vp;
+    int depth[kStack];
+    int* psdepth = depth;
+    int cdepth = get_msb(static_cast<std::uint64_t>(num)) * 2;
+
+    for (;;) {
+        if (cdepth < 0) {
+            aheapsort(v, pl, pr - pl + 1);
+            goto stack_pop;
+        }
+        while ((pr - pl) > kSmallQuicksort) {
+            pm = pl + ((pr - pl) >> 1);
+            if (double_less(v[*pm], v[*pl])) std::swap(*pm, *pl);
+            if (double_less(v[*pr], v[*pm])) std::swap(*pr, *pm);
+            if (double_less(v[*pm], v[*pl])) std::swap(*pm, *pl);
+            vp = v[*pm];
+            pi = pl;
+            pj = pr - 1;
+            std::swap(*pm, *pj);
+            for (;;) {
+                do {
+                    ++pi;
+                } while (double_less(v[*pi], vp));
+                do {
+                    --pj;
+                } while (double_less(vp, v[*pj]));
+                if (pi >= pj) {
+                    break;
+                }
+                std::swap(*pi, *pj);
+            }
+            pk = pr - 1;
+            std::swap(*pi, *pk);
+            // push largest partition on stack
+            if (pi - pl < pr - pi) {
+                *sptr++ = pi + 1;
+                *sptr++ = pr;
+                pr = pi - 1;
+            } else {
+                *sptr++ = pl;
+                *sptr++ = pi - 1;
+                pl = pi + 1;
+            }
+            *psdepth++ = --cdepth;
+        }
+        // insertion sort
+        for (pi = pl + 1; pi <= pr; ++pi) {
+            vi = *pi;
+            vp = v[vi];
+            pj = pi;
+            pk = pi - 1;
+            while (pj > pl && double_less(vp, v[*pk])) {
+                *pj-- = *pk--;
+            }
+            *pj = vi;
+        }
+    stack_pop:
+        if (sptr == stack) {
+            break;
+        }
+        pr = *(--sptr);
+        pl = *(--sptr);
+        cdepth = *(--psdepth);
+    }
+    return order;
+}
+
+std::size_t argmin(const double* values, std::size_t n) {
+    std::size_t best = 0;
+    for (std::size_t i = 1; i < n; ++i) {
+        if (std::isnan(values[best])) {
+            return best;
+        }
+        if (values[i] < values[best] || std::isnan(values[i])) {
+            best = i;
+        }
+    }
+    return best;
+}
+
 double degrees(double radians) { return radians * (180.0 / M_PI); }
 
 double radians(double degrees) { return degrees * (M_PI / 180.0); }

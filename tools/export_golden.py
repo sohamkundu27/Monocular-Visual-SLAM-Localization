@@ -140,6 +140,18 @@ def export_compat() -> None:
             "percentile_50": fhex(np.percentile(positive, 50)),
         })
 
+    # np.argsort (default kind) is NOT stable; the C++ port reproduces NumPy's
+    # introsort so ties come out in the same order. Arrays with many ties.
+    argsort_cases = []
+    for n in [1, 2, 3, 5, 10, 15, 16, 17, 20, 33, 50, 100, 257, 500, 3000]:
+        data = np.round(rng.standard_normal(n), 1)
+        argsort_cases.append({"data": enc(data), "argsort": enc(np.argsort(data)),
+                              "argsort_neg": enc(np.argsort(-data))})
+    data = rng.standard_normal(200)
+    data[::7] = np.nan
+    argsort_cases.append({"data": enc(data), "argsort": enc(np.argsort(data)),
+                          "argsort_neg": enc(np.argsort(-data))})
+
     json_objects = [
         {"a": 1, "b": 2.5, "c": None, "d": True, "e": False, "f": "text"},
         {"nested": {"list": [1, 2.0, 3e-7, -0.0], "empty_list": [], "empty_dict": {}},
@@ -175,6 +187,7 @@ def export_compat() -> None:
         "format": format_cases,
         "int_format": int_cases,
         "stats": stats_cases,
+        "argsort": argsort_cases,
         "json": json_cases,
         "csv": {"rows": csv_input, "text": buffer.getvalue()},
         "savetxt": {"rows": enc(savetxt_rows), "text": savetxt_buffer.getvalue()},
@@ -889,9 +902,20 @@ def export_pipeline_synthetic() -> None:
             metrics = build_metrics(result)
             for volatile in ("runtime_fps", "timing", "environment"):
                 metrics.pop(volatile, None)
+            metrics["dataset"]["root"] = "<root>"  # a temporary directory
+            # Per-frame timings vary run to run; blank them so the fixture is
+            # stable (the C++ test skips these columns).
+            rows = list(csv.DictReader(io.StringIO(csv_path.read_text(), newline="")))
+            for row in rows:
+                for column in ("detect_ms", "match_ms", "pose_ms"):
+                    row[column] = ""
+            scrubbed = io.StringIO(newline="")
+            writer = csv.DictWriter(scrubbed, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
             results[name] = {
                 "overrides": {**base, **extra},
-                "diagnostics_csv": csv_path.read_text(),
+                "diagnostics_csv": scrubbed.getvalue(),
                 "trajectory_txt": traj_path.read_text(),
                 "trajectory": enc(result.raw_trajectory.poses),
                 "metrics_json": json.dumps(metrics, indent=2),

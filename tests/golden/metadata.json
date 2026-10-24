@@ -6,5 +6,5 @@
  "scipy": "1.17.1",
  "gtsam": "4.2.2",
  "pyyaml": "6.0.1",
- "git_commit": "f3085d1dc42e0cb069dc809d580e2e0df2e54cb2"
+ "git_commit": "6963f711d2ffdfda1539b6567d0744d005bf4812"
 }

@@ -89,6 +89,18 @@ TEST(CompatNumpy, ReductionsAreBitIdentical) {
     }
 }
 
+TEST(CompatNumpy, ArgsortReproducesNumpyTieOrder) {
+    for (const auto& item : compat().at("argsort")) {
+        std::vector<double> data = golden::vec(item.at("data"));
+        SCOPED_TRACE("n=" + std::to_string(data.size()));
+        EXPECT_EQ(np::argsort(data), golden::ivec(item.at("argsort")));
+        for (double& x : data) {
+            x = -x;
+        }
+        EXPECT_EQ(np::argsort(data), golden::ivec(item.at("argsort_neg")));
+    }
+}
+
 TEST(CompatNumpy, MedianAndMeanEdgeCases) {
     EXPECT_TRUE(std::isnan(np::median({})));
     EXPECT_TRUE(std::isnan(np::median({1.0, NAN, 2.0})));

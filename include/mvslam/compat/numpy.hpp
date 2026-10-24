@@ -17,6 +17,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace mvslam::np {
@@ -44,6 +45,19 @@ double max(const std::vector<double>& values);
 
 /// ``np.sqrt(np.mean(values ** 2))``.
 double rms(const std::vector<double>& values);
+
+/// ``np.argsort(values)`` with the default (non-stable) quicksort kind.
+///
+/// NumPy's introsort is reproduced exactly (median-of-3 partitioning,
+/// insertion sort below 16 elements, heapsort past the depth limit, NaNs
+/// last), because the order of *tied* elements is part of the observable
+/// result: it decides which keypoints survive the feature budget and the
+/// order loop candidates are verified in. This is NumPy's generic path; on
+/// CPUs with AVX-512 NumPy 1.26 dispatches to a SIMD sort instead.
+std::vector<std::int64_t> argsort(const std::vector<double>& values);
+
+/// ``np.argmin`` (first occurrence of the minimum; NaN wins like in NumPy).
+std::size_t argmin(const double* values, std::size_t n);
 
 /// ``np.degrees`` / ``np.radians``.
 double degrees(double radians);
