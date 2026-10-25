@@ -45,7 +45,6 @@ endif()
 # --------------------------------------------------------------------------- #
 set(MVSLAM_SOURCES
     src/config.cpp
-    src/errors.cpp
     src/pipeline.cpp
     src/reporting.cpp
     src/version.cpp
@@ -80,16 +79,7 @@ set(MVSLAM_SOURCES
     src/cli/report.cpp
 )
 
-# Only sources that exist are compiled, so the library can be built up module
-# by module during the port without a placeholder for every file.
-set(_mvslam_existing_sources "")
-foreach(_src IN LISTS MVSLAM_SOURCES)
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_src}")
-        list(APPEND _mvslam_existing_sources "${_src}")
-    endif()
-endforeach()
-
-add_library(mvslam STATIC ${_mvslam_existing_sources})
+add_library(mvslam STATIC ${MVSLAM_SOURCES})
 add_library(mvslam::mvslam ALIAS mvslam)
 target_include_directories(mvslam PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -112,10 +102,8 @@ target_compile_definitions(mvslam PRIVATE
 # Executables (replace scripts/*.py and the Python console entry points).
 # --------------------------------------------------------------------------- #
 foreach(_app IN ITEMS run_slam run_vo evaluate report)
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/apps/${_app}.cpp")
-        add_executable(${_app} apps/${_app}.cpp)
-        target_link_libraries(${_app} PRIVATE mvslam mvslam_warnings)
-    endif()
+    add_executable(${_app} apps/${_app}.cpp)
+    target_link_libraries(${_app} PRIVATE mvslam mvslam_warnings)
 endforeach()
 
 if(MVSLAM_BUILD_TESTS)

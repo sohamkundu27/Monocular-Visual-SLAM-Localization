@@ -195,3 +195,24 @@ TEST_F(Reporting, EmbedFigures) {
 TEST_F(Reporting, PublishInstructions) {
     write_run(); contains(render_readme_results(load_run_summaries(tmp.path())),"--publish-figures");
 }
+
+#include "support/process.hpp"
+// py: test_reporting.py::TestReportCLI::test_exits_zero_when_runs_exist
+TEST_F(Reporting, CliExistingRuns) {
+    write_run(); const auto r=run_process(MVSLAM_EXE_REPORT,{"--outputs",tmp.path().string(),"--log-level","ERROR"});
+    EXPECT_EQ(r.code,0)<<r.err; contains(r.out,"Wrote");
+}
+// py: test_reporting.py::TestReportCLI::test_exits_nonzero_and_explains_when_no_runs
+TEST_F(Reporting, CliNoRuns) {
+    const auto r=run_process(MVSLAM_EXE_REPORT,{"--outputs",tmp.path().string(),"--log-level","ERROR"});
+    EXPECT_EQ(r.code,1); contains(r.err,"No metrics.json files found");
+}
+// py: test_reporting.py::TestReportCLI::test_print_flag_emits_the_document
+TEST_F(Reporting, CliPrint) {
+    write_run(); const auto r=run_process(MVSLAM_EXE_REPORT,{"--outputs",tmp.path().string(),"--print","--log-level","ERROR"});
+    EXPECT_EQ(r.code,0)<<r.err; contains(r.out,"# Resume metrics");
+}
+// py: test_reporting.py::TestReportCLI::test_help_renders
+TEST_F(Reporting, CliHelp) {
+    const auto r=run_process(MVSLAM_EXE_REPORT,{"--help"}); EXPECT_EQ(r.code,0); contains(r.out,"usage:");
+}
