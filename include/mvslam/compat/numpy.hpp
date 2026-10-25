@@ -32,6 +32,11 @@ double mean(const std::vector<double>& values);
 /// ``np.std`` with ddof=0.
 double std_dev(const std::vector<double>& values);
 
+/// ``arr.mean(axis=0)`` of a C-contiguous (rows, cols) array. NumPy sums
+/// along a non-contiguous axis sequentially (the inner loop runs over the
+/// columns), not pairwise, and this reproduces that order.
+std::vector<double> mean_axis0(const double* data, std::size_t rows, std::size_t cols);
+
 /// ``np.median``: NaN-propagating, NaN for an empty array.
 double median(std::vector<double> values);
 

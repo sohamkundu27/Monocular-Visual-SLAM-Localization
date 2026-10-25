@@ -71,6 +71,19 @@ double mean(const std::vector<double>& values) {
     return sum(values) / static_cast<double>(values.size());
 }
 
+std::vector<double> mean_axis0(const double* data, std::size_t rows, std::size_t cols) {
+    std::vector<double> out(cols, 0.0);
+    for (std::size_t r = 0; r < rows; ++r) {
+        for (std::size_t c = 0; c < cols; ++c) {
+            out[c] += data[r * cols + c];
+        }
+    }
+    for (double& v : out) {
+        v /= static_cast<double>(rows);
+    }
+    return out;
+}
+
 double std_dev(const std::vector<double>& values) {
     if (values.empty()) {
         return kNaN;
