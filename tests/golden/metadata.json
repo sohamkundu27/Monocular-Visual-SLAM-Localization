@@ -1,0 +1,10 @@
+{
+ "python": "3.12.3",
+ "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+ "cv2": "4.13.0",
+ "numpy": "1.26.4",
+ "scipy": "1.17.1",
+ "gtsam": "4.2.2",
+ "pyyaml": "6.0.1",
+ "git_commit": "6963f711d2ffdfda1539b6567d0744d005bf4812"
+}

@@ -1,0 +1,388 @@
+{
+  "sequence": "01",
+  "frames": 1101,
+  "distance_km": 2.4532,
+  "successful_pose_rate_pct": 99.91,
+  "ate_rmse_raw_m": 16.2054,
+  "ate_rmse_optimized_m": 17.6665,
+  "ate_reduction_pct": -9.02,
+  "translational_drift_raw_pct": 3.2951,
+  "translational_drift_optimized_pct": 3.3702,
+  "rotational_drift_deg_per_100m": 0.98736,
+  "rotational_drift_optimized_deg_per_100m": 1.01093,
+  "loop_closures_detected": 1,
+  "avg_features_per_frame": 2697.6,
+  "avg_matches_per_pair": 931.2,
+  "avg_inlier_ratio_pct": 71.7,
+  "runtime_fps": 17.8,
+  "ground_truth_available": true,
+  "scale_source": "ground_truth",
+  "scale_uses_ground_truth": true,
+  "alignment": "sim3",
+  "dataset": {
+    "sequence": "01",
+    "camera": "image_0",
+    "root": "/home/soham/datasets/kitti/dataset",
+    "frames_available": 1101,
+    "frames_selected": 1101,
+    "start_frame": 0,
+    "frame_step": 1,
+    "image_size": [
+      1241,
+      376
+    ],
+    "fx": 718.856,
+    "fy": 718.856,
+    "cx": 607.1928,
+    "cy": 185.2157,
+    "has_ground_truth": true,
+    "ground_truth_path_length_m": 2453.203
+  },
+  "odometry": {
+    "transitions": 1100,
+    "successful": 1099,
+    "status_counts": {
+      "ok": 1099,
+      "failed": 1
+    },
+    "degenerate_transitions": 0,
+    "avg_ransac_inliers": 671.4,
+    "avg_cheirality_ratio_pct": 76.24,
+    "scale_strategy": {
+      "strategy": "ground_truth",
+      "uses_ground_truth": true,
+      "n_transitions": 1100,
+      "median_step_m": 2.535497729836596
+    }
+  },
+  "loop_closure": {
+    "enabled": true,
+    "n_keyframes": 923,
+    "accepted": 1,
+    "stats": {
+      "queries": 884,
+      "candidates_retrieved": 4410,
+      "rejected_normalized_similarity": 4198,
+      "rejected_too_few_matches": 93,
+      "rejected_geometry": 38,
+      "rejected_cooldown": 9,
+      "scale_estimation_failed": 80,
+      "rejected_large_scale": 79,
+      "accepted": 1,
+      "mean_matches_per_candidate": 93.4,
+      "mean_inliers_per_accepted": 122.0
+    },
+    "closures": [
+      {
+        "query_keyframe": 357,
+        "match_keyframe": 327,
+        "query_frame_index": 409,
+        "match_frame_index": 379,
+        "similarity": 0.7485,
+        "normalized_similarity": 0.8569,
+        "n_matches": 213,
+        "n_inliers": 122,
+        "inlier_ratio": 0.5728,
+        "scale_m": 9.8075,
+        "scale_method": "structure",
+        "n_scale_points": 66
+      }
+    ]
+  },
+  "optimization": {
+    "optimizer": "levenberg_marquardt",
+    "n_nodes": 923,
+    "n_odometry_edges": 922,
+    "n_loop_edges": 1,
+    "iterations": 3,
+    "converged": true,
+    "initial_error": 312.181271,
+    "final_error": 309.088262,
+    "error_reduction_pct": 0.991,
+    "residuals_before": {
+      "mean_odometry_translation_m": 0.0,
+      "max_odometry_translation_m": 0.0,
+      "mean_odometry_rotation_deg": 0.0,
+      "max_odometry_rotation_deg": 0.0,
+      "mean_loop_translation_m": 69.83308,
+      "max_loop_translation_m": 69.83308,
+      "mean_loop_rotation_deg": 0.50968,
+      "max_loop_rotation_deg": 0.50968
+    },
+    "residuals_after": {
+      "mean_odometry_translation_m": 0.00146,
+      "max_odometry_translation_m": 0.04489,
+      "mean_odometry_rotation_deg": 0.00247,
+      "max_odometry_rotation_deg": 0.06289,
+      "mean_loop_translation_m": 68.46441,
+      "max_loop_translation_m": 68.46441,
+      "mean_loop_rotation_deg": 1.71848,
+      "max_loop_rotation_deg": 1.71848
+    }
+  },
+  "evaluation_raw": {
+    "label": "raw_vo",
+    "path_length_m": 2453.203,
+    "reference_path_length_m": 2453.203,
+    "ate_aligned": {
+      "rmse": 16.205397,
+      "mean": 14.170732,
+      "median": 11.258486,
+      "std": 7.861632,
+      "min": 4.306763,
+      "max": 42.423939,
+      "n": 1101,
+      "alignment": "sim3",
+      "alignment_scale": 1.021524
+    },
+    "ate_unaligned": {
+      "rmse": 57.932217,
+      "mean": 46.071537,
+      "median": 48.602096,
+      "std": 35.122006,
+      "min": 0.0,
+      "max": 95.184041,
+      "n": 1101,
+      "alignment": "none",
+      "alignment_scale": 1.0
+    },
+    "rpe": {
+      "1": {
+        "delta": 1,
+        "n": 1100,
+        "trans_rmse": 0.397222,
+        "trans_mean": 0.123168,
+        "trans_median": 0.063429,
+        "trans_max": 4.327301,
+        "rot_rmse_deg": 0.293278,
+        "rot_mean_deg": 0.066549,
+        "rot_median_deg": 0.031432,
+        "rot_max_deg": 7.666717
+      },
+      "10": {
+        "delta": 10,
+        "n": 1091,
+        "trans_rmse": 1.51024,
+        "trans_mean": 0.895247,
+        "trans_median": 0.627111,
+        "trans_max": 9.488259,
+        "rot_rmse_deg": 0.977,
+        "rot_mean_deg": 0.406832,
+        "rot_median_deg": 0.170169,
+        "rot_max_deg": 7.681277
+      },
+      "100": {
+        "delta": 100,
+        "n": 1001,
+        "trans_rmse": 7.641858,
+        "trans_mean": 6.29072,
+        "trans_median": 5.265049,
+        "trans_max": 26.473414,
+        "rot_rmse_deg": 3.476969,
+        "rot_mean_deg": 2.564301,
+        "rot_median_deg": 2.05387,
+        "rot_max_deg": 11.057468
+      }
+    },
+    "drift": {
+      "translation_pct": 3.2951,
+      "rotation_deg_per_m": 0.00987359,
+      "rotation_deg_per_100m": 0.98736,
+      "n_segments": 676,
+      "per_length": {
+        "100": [
+          3.0304,
+          0.01359675
+        ],
+        "200": [
+          2.6574,
+          0.01107216
+        ],
+        "300": [
+          2.6919,
+          0.01044834
+        ],
+        "400": [
+          2.9371,
+          0.009681
+        ],
+        "500": [
+          3.3026,
+          0.00920578
+        ],
+        "600": [
+          3.6786,
+          0.0084484
+        ],
+        "700": [
+          4.1413,
+          0.00760099
+        ],
+        "800": [
+          4.5227,
+          0.00676396
+        ]
+      }
+    }
+  },
+  "evaluation_optimized": {
+    "label": "optimized_slam",
+    "path_length_m": 2451.866,
+    "reference_path_length_m": 2453.203,
+    "ate_aligned": {
+      "rmse": 17.666504,
+      "mean": 15.580678,
+      "median": 12.519885,
+      "std": 8.327535,
+      "min": 5.115874,
+      "max": 44.250033,
+      "n": 1101,
+      "alignment": "sim3",
+      "alignment_scale": 1.022571
+    },
+    "ate_unaligned": {
+      "rmse": 59.828594,
+      "mean": 47.310558,
+      "median": 49.554683,
+      "std": 36.622012,
+      "min": 0.0,
+      "max": 98.644288,
+      "n": 1101,
+      "alignment": "none",
+      "alignment_scale": 1.0
+    },
+    "rpe": {
+      "1": {
+        "delta": 1,
+        "n": 1100,
+        "trans_rmse": 0.397611,
+        "trans_mean": 0.124188,
+        "trans_median": 0.065081,
+        "trans_max": 4.329528,
+        "rot_rmse_deg": 0.293304,
+        "rot_mean_deg": 0.066978,
+        "rot_median_deg": 0.032069,
+        "rot_max_deg": 7.666717
+      },
+      "10": {
+        "delta": 10,
+        "n": 1091,
+        "trans_rmse": 1.511608,
+        "trans_mean": 0.903108,
+        "trans_median": 0.645303,
+        "trans_max": 9.483113,
+        "rot_rmse_deg": 0.977552,
+        "rot_mean_deg": 0.411597,
+        "rot_median_deg": 0.176116,
+        "rot_max_deg": 7.681277
+      },
+      "100": {
+        "delta": 100,
+        "n": 1001,
+        "trans_rmse": 7.611431,
+        "trans_mean": 6.296531,
+        "trans_median": 5.029273,
+        "trans_max": 26.094926,
+        "rot_rmse_deg": 3.501387,
+        "rot_mean_deg": 2.615756,
+        "rot_median_deg": 2.127551,
+        "rot_max_deg": 10.916266
+      }
+    },
+    "drift": {
+      "translation_pct": 3.3702,
+      "rotation_deg_per_m": 0.01010932,
+      "rotation_deg_per_100m": 1.01093,
+      "n_segments": 676,
+      "per_length": {
+        "100": [
+          3.0655,
+          0.01377544
+        ],
+        "200": [
+          2.6868,
+          0.01123661
+        ],
+        "300": [
+          2.7038,
+          0.01066038
+        ],
+        "400": [
+          2.9497,
+          0.00995927
+        ],
+        "500": [
+          3.3519,
+          0.00945132
+        ],
+        "600": [
+          3.8058,
+          0.00868352
+        ],
+        "700": [
+          4.3212,
+          0.00790204
+        ],
+        "800": [
+          4.7458,
+          0.00708676
+        ]
+      }
+    }
+  },
+  "timing": {
+    "total_runtime_s": 61.847,
+    "avg_frame_latency_ms": 56.173,
+    "fps": 17.8,
+    "stages": {
+      "detect": {
+        "total_s": 6.2635,
+        "mean_ms": 5.689,
+        "max_ms": 193.865,
+        "calls": 1101
+      },
+      "loop_detect": {
+        "total_s": 3.1257,
+        "mean_ms": 3125.657,
+        "max_ms": 3125.657,
+        "calls": 1
+      },
+      "loop_index": {
+        "total_s": 4.4961,
+        "mean_ms": 4496.144,
+        "max_ms": 4496.144,
+        "calls": 1
+      },
+      "match": {
+        "total_s": 7.9578,
+        "mean_ms": 7.234,
+        "max_ms": 27.748,
+        "calls": 1100
+      },
+      "optimize": {
+        "total_s": 0.014,
+        "mean_ms": 14.04,
+        "max_ms": 14.04,
+        "calls": 1
+      },
+      "pose": {
+        "total_s": 24.2761,
+        "mean_ms": 22.069,
+        "max_ms": 44.621,
+        "calls": 1100
+      },
+      "vocabulary": {
+        "total_s": 12.13,
+        "mean_ms": 12130.019,
+        "max_ms": 12130.019,
+        "calls": 1
+      }
+    }
+  },
+  "environment": {
+    "generated_utc": "2026-10-24T23:20:12+00:00",
+    "python": "3.12.3",
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+    "seed": 0
+  }
+}
