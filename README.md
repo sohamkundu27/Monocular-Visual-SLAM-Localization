@@ -431,13 +431,14 @@ error between two similar trajectories.
 
 ## Performance
 
-Every run is instrumented per stage with `time.perf_counter`; the totals land in
+Every run is instrumented per stage (`std::chrono::steady_clock` in C++,
+`time.perf_counter` in Python); the totals land in
 `metrics.json` under `timing.stages` and are printed to `run.log`. The overhead is two clock
 reads per call, negligible against ~7 ms of ORB detection, so instrumentation is always on
 rather than behind a flag.
 
-Measured with the Python implementation on the full KITTI sequence 00 run (4541 frames,
-single CPU core). The C++ port's throughput is in
+Measured with the Python implementation on the full KITTI sequence 00 run (4541 frames).
+OpenCV may use multiple CPU threads internally. The C++ port's throughput is in
 [C++ build and usage](#c-build-and-usage).
 
 | Stage | Total | Per call | Calls |
@@ -656,14 +657,18 @@ is inside them.
 
 **Throughput.** Measured on an Intel Core i9-12900K (24 hardware threads). FPS is
 `runtime_fps` from `metrics.json`: frames divided by the pipeline's wall-clock runtime (VO,
-loop closure and optimization, every frame processed). For each run, the whole process's wall
+loop closure, optimization and evaluation, every frame processed). This excludes initialization
+and final artifact and plot writes. For each run, the whole process's wall
 time from `/usr/bin/time` was within 0.5 s of that runtime.
 
-| Sequence | C++ FPS | C++ runtime | C++ FPS, sequential front end | Python FPS (same machine) |
+| Sequence | C++ FPS | C++ runtime | C++ FPS, sequential front end | Python reference FPS |
 |---:|---:|---:|---:|---:|
 | 00 | 44.4 | 102.2 s | 18.1 | 16.5 |
 | 01 | 54.5 | 20.2 s | 22.1 | 17.8 |
 | 05 | 51.7 | 53.4 s | 19.6 | 17.4 |
+
+Python FPS comes from the recorded `tests/golden/kitti/sequence_*/metrics.json` runs;
+these are historical measurements, not simultaneous timing comparisons.
 
 Detection, matching and two-view pose estimation depend only on the two images, so the front
 end runs them for a batch of frames on worker threads. `MVSLAM_NUM_THREADS` sets the thread
@@ -924,7 +929,9 @@ generator refuses to build a claim from a value that was not measured.
   the graph better than hand-set sigmas.
 - **No relocalization or map persistence.** The system runs one sequence start to finish; it
   cannot recover from total tracking loss, nor save and reload a map.
-- **CPU-bound.** No GPU acceleration, no multi-threading. Throughput is reported per run.
+- **CPU-bound.** No GPU acceleration. The C++ front end processes image pairs on worker
+  threads; loop closure and pose-graph optimization remain sequential. Throughput is reported
+  per run.
 
 ---
 
