@@ -144,8 +144,11 @@ cv::Mat FeatureDetector::preprocess(const cv::Mat& image) const {
         out = truncated;
     }
     if (clahe_) {
+        // CLAHE keeps scratch buffers in the object, so a per-call instance
+        // with the same settings keeps detect() safe to call from the VO
+        // worker threads (the output does not depend on those buffers).
         cv::Mat equalised;
-        clahe_->apply(out, equalised);
+        cv::createCLAHE(clahe_->getClipLimit(), clahe_->getTilesGridSize())->apply(out, equalised);
         out = equalised;
     }
     return out;

@@ -6,6 +6,11 @@
 // a pair of clock reads per call, which is negligible next to ORB detection
 // at tens of ms per frame, so instrumentation is always on rather than behind
 // a flag.
+//
+// The VO front end runs detect/match/pose on worker threads and records each
+// frame's durations afterwards, so those stage totals are summed across
+// threads and can exceed the wall-clock runtime; FPS and total runtime always
+// use the wall clock.
 #pragma once
 
 #include <chrono>

@@ -1,6 +1,12 @@
 #include "mvslam/odometry/visual_odometry.hpp"
 
+#include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <cmath>
+#include <cstdlib>
+#include <exception>
+#include <thread>
 
 #include "mvslam/compat/numpy.hpp"
 #include "mvslam/compat/pyformat.hpp"
@@ -35,6 +41,69 @@ double finite_mean(const std::vector<FrameDiagnostics>& diagnostics, bool only_s
         }
     }
     return values.empty() ? std::numeric_limits<double>::quiet_NaN() : np::mean(values);
+}
+
+using Clock = std::chrono::steady_clock;
+
+double seconds_since(Clock::time_point started) {
+    return std::chrono::duration<double>(Clock::now() - started).count();
+}
+
+/// Front-end results for one frame: everything that depends only on the
+/// images, and not on the trajectory accumulated so far.
+struct FrontEndWork {
+    cv::Mat image;
+    std::optional<Frame> frame;
+    MatchResult matches;
+    std::optional<Eigen::Matrix4d> relative;
+    FrameDiagnostics diag;
+    double detect_s = 0.0;
+    double match_s = 0.0;
+    double pose_s = 0.0;
+    // A failure is held back and rethrown when the sequential pass reaches
+    // this frame, so earlier frames are still delivered first, as in the
+    // one-frame-at-a-time loop.
+    std::exception_ptr error;
+};
+
+/// Worker threads for the front end: MVSLAM_NUM_THREADS when set (1 gives
+/// the plain sequential loop), otherwise the hardware concurrency.
+std::size_t front_end_threads() {
+    if (const char* env = std::getenv("MVSLAM_NUM_THREADS")) {
+        const std::optional<std::int64_t> parsed = py::parse_int(env);
+        if (parsed && *parsed > 0) {
+            return static_cast<std::size_t>(*parsed);
+        }
+    }
+    return std::max<std::size_t>(1, std::thread::hardware_concurrency());
+}
+
+/// Run ``fn(k)`` for k in [0, n) on up to ``threads`` threads. ``fn`` must
+/// not throw (FrontEndWork captures failures itself).
+template <typename Fn>
+void parallel_for_index(std::size_t n, std::size_t threads, const Fn& fn) {
+    const std::size_t workers = std::min(threads, n);
+    if (workers <= 1) {
+        for (std::size_t k = 0; k < n; ++k) {
+            fn(k);
+        }
+        return;
+    }
+    std::atomic<std::size_t> next{0};
+    auto drain = [&]() {
+        for (std::size_t k = next++; k < n; k = next++) {
+            fn(k);
+        }
+    };
+    std::vector<std::thread> pool;
+    pool.reserve(workers - 1);
+    for (std::size_t w = 1; w < workers; ++w) {
+        pool.emplace_back(drain);
+    }
+    drain();
+    for (auto& t : pool) {
+        t.join();
+    }
 }
 
 }  // namespace
@@ -286,68 +355,108 @@ OdometryResult VisualOdometry::run(const KittiOdometryDataset& dataset, const Fr
 
     std::optional<Eigen::Matrix4d> last_relative_direction;
 
-    for (std::int64_t i = 1; i < n; ++i) {
-        const cv::Mat image = dataset.load_image(static_cast<std::size_t>(i));
-        const std::int64_t frame_id = dataset.frame_ids()[static_cast<std::size_t>(i)];
-        FrameDiagnostics diag;
-        diag.index = i;
-        diag.frame_id = frame_id;
-        diag.status = kStatusFailed;
+    // Detection, matching and two-view pose estimation for a transition
+    // depend only on the two images, never on the trajectory, so they run
+    // for a batch of frames on worker threads. Each OpenCV call seeds its own
+    // RNG (USAC state 0, RANSAC's fixed seed, ORB's fixed seeds), so the
+    // results are identical to the sequential loop for any thread count.
+    // Everything order-dependent -- scale lookup, constant-velocity fallback,
+    // trajectory accumulation, the on_frame callback (keyframes and loop
+    // closure) and the stage timers -- stays in the sequential pass below,
+    // in frame order.
+    const std::size_t threads = front_end_threads();
+    const auto batch_size = static_cast<std::int64_t>(4 * threads);
+    std::vector<FrontEndWork> batch;
+    batch.reserve(static_cast<std::size_t>(batch_size));
 
-        const double t_detect = timer_->stats("detect").total_s;
-        std::optional<Frame> current;
-        {
-            auto scope = timer_->time("detect");
-            current = detector_.detect(image, i, frame_id);
-        }
-        diag.detect_ms = (timer_->stats("detect").total_s - t_detect) * 1000.0;
-        diag.n_keypoints = static_cast<std::int64_t>(current->size());
+    for (std::int64_t batch_start = 1; batch_start < n; batch_start += batch_size) {
+        const std::int64_t batch_end = std::min(n, batch_start + batch_size);
+        const auto m = static_cast<std::size_t>(batch_end - batch_start);
+        batch.clear();
+        batch.resize(m);
 
-        const double t_match = timer_->stats("match").total_s;
-        MatchResult matches;
-        {
-            auto scope = timer_->time("match");
-            matches = matcher_.match(*previous, *current);
-        }
-        diag.match_ms = (timer_->stats("match").total_s - t_match) * 1000.0;
-
-        const double t_pose = timer_->stats("pose").total_s;
-        std::optional<Eigen::Matrix4d> relative;
-        {
-            auto scope = timer_->time("pose");
-            relative = estimate_relative_pose(matches, diag);
-        }
-        diag.pose_ms = (timer_->stats("pose").total_s - t_pose) * 1000.0;
-
-        const std::optional<double> scale = scale_estimator_->scale_for(i - 1);
-        diag.scale_m = scale ? *scale : std::numeric_limits<double>::quiet_NaN();
-
-        const Eigen::Matrix4d step = resolve_step(relative, scale, diag, last_relative_direction);
-        if (diag.status == kStatusOk && relative) {
-            last_relative_direction = relative;
-        }
-
-        poses.push_back(project_to_se3(poses.back() * step));
-        relative_poses.push_back(step);
-        diagnostics.push_back(diag);
-        previous = std::move(current);
-
-        if (on_frame) {
-            on_frame(i, *previous, image, poses.back());
-        }
-
-        if (progress_interval && i % progress_interval == 0) {
-            std::int64_t ok = 0;
-            for (const auto& d : diagnostics) {
-                ok += d.succeeded() ? 1 : 0;
+        parallel_for_index(m, threads, [&](std::size_t k) {
+            FrontEndWork& w = batch[k];
+            const std::int64_t i = batch_start + static_cast<std::int64_t>(k);
+            try {
+                w.image = dataset.load_image(static_cast<std::size_t>(i));
+                const std::int64_t frame_id = dataset.frame_ids()[static_cast<std::size_t>(i)];
+                w.diag.index = i;
+                w.diag.frame_id = frame_id;
+                w.diag.status = kStatusFailed;
+                const auto started = Clock::now();
+                w.frame = detector_.detect(w.image, i, frame_id);
+                w.detect_s = seconds_since(started);
+                w.diag.detect_ms = w.detect_s * 1000.0;
+                w.diag.n_keypoints = static_cast<std::int64_t>(w.frame->size());
+            } catch (...) {
+                w.error = std::current_exception();
             }
-            logger().info(py::sprintf(
-                "frame %lld/%lld | success %.1f%% | matches %lld | inliers %lld | %.1f fps",
-                static_cast<long long>(i), static_cast<long long>(n - 1),
-                100.0 * static_cast<double>(ok) / static_cast<double>(diagnostics.size()),
-                static_cast<long long>(diag.n_matches), static_cast<long long>(diag.n_cheirality_inliers),
-                timer_->fps(i + 1)));
+        });
+
+        parallel_for_index(m, threads, [&](std::size_t k) {
+            FrontEndWork& w = batch[k];
+            const std::optional<Frame>& prev = k == 0 ? previous : batch[k - 1].frame;
+            if (w.error || !prev || !w.frame) {
+                return;  // the earlier failure is rethrown in order below
+            }
+            try {
+                auto started = Clock::now();
+                w.matches = matcher_.match(*prev, *w.frame);
+                w.match_s = seconds_since(started);
+                w.diag.match_ms = w.match_s * 1000.0;
+
+                started = Clock::now();
+                w.relative = estimate_relative_pose(w.matches, w.diag);
+                w.pose_s = seconds_since(started);
+                w.diag.pose_ms = w.pose_s * 1000.0;
+            } catch (...) {
+                w.error = std::current_exception();
+            }
+        });
+
+        for (std::size_t k = 0; k < m; ++k) {
+            FrontEndWork& w = batch[k];
+            if (w.error) {
+                std::rethrow_exception(w.error);
+            }
+            const std::int64_t i = batch_start + static_cast<std::int64_t>(k);
+            FrameDiagnostics& diag = w.diag;
+            timer_->record("detect", w.detect_s);
+            timer_->record("match", w.match_s);
+            timer_->record("pose", w.pose_s);
+
+            const std::optional<double> scale = scale_estimator_->scale_for(i - 1);
+            diag.scale_m = scale ? *scale : std::numeric_limits<double>::quiet_NaN();
+
+            const Eigen::Matrix4d step = resolve_step(w.relative, scale, diag, last_relative_direction);
+            if (diag.status == kStatusOk && w.relative) {
+                last_relative_direction = w.relative;
+            }
+
+            poses.push_back(project_to_se3(poses.back() * step));
+            relative_poses.push_back(step);
+            diagnostics.push_back(diag);
+
+            if (on_frame) {
+                on_frame(i, *w.frame, w.image, poses.back());
+            }
+
+            if (progress_interval && i % progress_interval == 0) {
+                std::int64_t ok = 0;
+                for (const auto& d : diagnostics) {
+                    ok += d.succeeded() ? 1 : 0;
+                }
+                logger().info(py::sprintf(
+                    "frame %lld/%lld | success %.1f%% | matches %lld | inliers %lld | %.1f fps",
+                    static_cast<long long>(i), static_cast<long long>(n - 1),
+                    100.0 * static_cast<double>(ok) / static_cast<double>(diagnostics.size()),
+                    static_cast<long long>(diag.n_matches),
+                    static_cast<long long>(diag.n_cheirality_inliers), timer_->fps(i + 1)));
+            }
         }
+        // The last frame of this batch is the first match partner of the next.
+        previous = std::move(batch.back().frame);
     }
 
     OdometryResult result;

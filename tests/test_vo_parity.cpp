@@ -180,6 +180,66 @@ TEST(VoParity, SyntheticSequenceMatchesPythonFrameByFrame) {
     }
 }
 
+// The front end runs detection, matching and two-view geometry for a batch
+// of frames on worker threads (MVSLAM_NUM_THREADS). That must not change a
+// single output: the sequential path (1 thread) and a thread count that
+// leaves a partial final batch must agree bit for bit, and the on_frame
+// callback must still see every frame once, in order.
+TEST(VoParity, ResultsAreIndependentOfFrontEndThreadCount) {
+    testing_utils::TempDir tmp;
+    const auto root = kitti_fixture::write_kitti_sequence(tmp / "dataset", "00", 40);
+    Json overrides = Json::object();
+    overrides["dataset.path"] = root.string();
+    overrides["output.root"] = (tmp / "outputs").string();
+    const Config config = Config().with_overrides(overrides);
+
+    const char* saved = std::getenv("MVSLAM_NUM_THREADS");
+    const std::optional<std::string> previous = saved ? std::optional<std::string>(saved) : std::nullopt;
+
+    auto run_with = [&](const char* threads, std::vector<std::int64_t>& seen) {
+        ::setenv("MVSLAM_NUM_THREADS", threads, 1);
+        set_global_seed(config.runtime.seed);
+        const KittiOdometryDataset dataset = KittiOdometryDataset::from_config(config);
+        VisualOdometry vo = VisualOdometry::from_config(config, dataset);
+        return vo.run(dataset, [&seen](std::int64_t i, const Frame& frame, const cv::Mat&,
+                                       const Eigen::Matrix4d&) {
+            EXPECT_EQ(frame.index, i);
+            seen.push_back(i);
+        }, 0);
+    };
+    std::vector<std::int64_t> seen_sequential;
+    std::vector<std::int64_t> seen_parallel;
+    const OdometryResult sequential = run_with("1", seen_sequential);
+    const OdometryResult parallel = run_with("7", seen_parallel);
+    if (previous) {
+        ::setenv("MVSLAM_NUM_THREADS", previous->c_str(), 1);
+    } else {
+        ::unsetenv("MVSLAM_NUM_THREADS");
+    }
+
+    std::vector<std::int64_t> expected_order(40);
+    for (std::int64_t i = 0; i < 40; ++i) {
+        expected_order[static_cast<std::size_t>(i)] = i;
+    }
+    EXPECT_EQ(seen_sequential, expected_order);
+    EXPECT_EQ(seen_parallel, expected_order);
+
+    ASSERT_EQ(sequential.diagnostics.size(), parallel.diagnostics.size());
+    for (std::size_t r = 0; r < sequential.diagnostics.size(); ++r) {
+        const Row a = sequential.diagnostics[r].to_row();
+        const Row b = parallel.diagnostics[r].to_row();
+        for (std::size_t c = 0; c < a.size(); ++c) {
+            if (!kVolatile.count(a[c].first)) {
+                EXPECT_EQ(a[c].second, b[c].second) << "row " << r << " " << a[c].first;
+            }
+        }
+    }
+    ASSERT_EQ(sequential.trajectory.size(), parallel.trajectory.size());
+    for (std::size_t i = 0; i < sequential.trajectory.size(); ++i) {
+        EXPECT_TRUE(sequential.trajectory[i] == parallel.trajectory[i]) << "pose " << i;
+    }
+}
+
 class KittiVoParity : public ::testing::TestWithParam<std::string> {};
 
 TEST_P(KittiVoParity, First300FramesMatchPython) {
