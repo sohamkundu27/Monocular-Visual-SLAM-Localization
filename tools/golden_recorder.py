@@ -6,7 +6,7 @@ that test code creates (the ``rng`` fixture, ``np.random.default_rng(seed)``
 calls inside tests and helpers) plus the seeded helper functions, and writes
 what they returned, in call order, per pytest node id.
 
-Library code (``src/monocular_slam``) is deliberately *not* recorded: its own
+Library code (``legacy_python/src/monocular_slam``) is deliberately *not* recorded: its own
 RNG use (vocabulary seeding, descriptor subsampling) is ported algorithmically
 with ``std::mt19937_64`` and validated statistically instead.
 
@@ -42,7 +42,7 @@ from pathlib import Path
 import numpy as np
 
 REPO = Path(__file__).resolve().parent.parent
-TESTS_DIR = str(REPO / "tests")
+TESTS_DIR = str(REPO / "legacy_python" / "tests")
 
 _DTYPES = {
     np.dtype(np.float64): "f8",

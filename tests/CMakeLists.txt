@@ -1,5 +1,7 @@
-# GoogleTest suite. tests/test_<module>.cpp mirrors tests/test_<module>.py;
-# tests/TEST_PORTING.md maps every Python test to its C++ counterpart.
+# GoogleTest suite. tests/test_<module>.cpp mirrors the Python
+# legacy_python/tests/test_<module>.py (the "mirrors tests/test_x.py" file
+# headers name paths inside legacy_python/); tests/TEST_PORTING.md maps every
+# Python test to its C++ counterpart.
 
 include(GoogleTest)
 

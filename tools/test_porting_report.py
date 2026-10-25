@@ -3,7 +3,7 @@
 
 Each ported GoogleTest case carries one ``// py: <node id>`` comment per Python
 test (or parametrised instance) it covers. This script collects the Python
-node ids with pytest, scans tests/test_*.cpp for those markers and reports
+node ids with pytest (from legacy_python/tests), scans tests/test_*.cpp for those markers and reports
 which Python tests have a C++ counterpart, so nothing silently disappears.
 
     .venv/bin/python tools/test_porting_report.py [--check]
@@ -21,7 +21,9 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-TESTS = REPO / "tests"
+TESTS = REPO / "tests"  # C++ tests and the generated checklist
+LEGACY = REPO / "legacy_python"
+PY_TESTS = LEGACY / "tests"
 MARKER = re.compile(r"//\s*py:\s*(\S+)")
 TEST_DECL = re.compile(r"^\s*TEST(?:_F|_P)?\(\s*(\w+)\s*,\s*(\w+)\s*\)")
 
@@ -29,8 +31,8 @@ TEST_DECL = re.compile(r"^\s*TEST(?:_F|_P)?\(\s*(\w+)\s*,\s*(\w+)\s*\)")
 def python_nodes() -> list[str]:
     completed = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q", "-o", "addopts=",
-         "-p", "no:cacheprovider", str(TESTS)],
-        cwd=REPO, capture_output=True, text=True,
+         "-p", "no:cacheprovider", str(PY_TESTS)],
+        cwd=LEGACY, capture_output=True, text=True,
     )
     nodes = [line.strip() for line in completed.stdout.splitlines() if "::" in line]
     return [n[len("tests/"):] if n.startswith("tests/") else n for n in nodes]

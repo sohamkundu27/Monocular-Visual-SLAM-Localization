@@ -9,7 +9,8 @@ import yaml
 
 from monocular_slam.config import Config, ConfigError
 
-REPO_CONFIG = Path(__file__).resolve().parent.parent / "configs" / "kitti.yaml"
+# legacy_python/tests/ -> repository root, where the shared config lives.
+REPO_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "kitti.yaml"
 
 
 class TestDefaults:

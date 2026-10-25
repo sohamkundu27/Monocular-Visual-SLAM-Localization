@@ -1,7 +1,9 @@
 # Monocular Visual SLAM & Localization
 
-A classical monocular visual SLAM system built from scratch in Python, benchmarked on the
-[KITTI Odometry](https://www.cvlibs.net/datasets/kitti/eval_odometry.php) dataset.
+A classical monocular visual SLAM system built from scratch in C++17, benchmarked on the
+[KITTI Odometry](https://www.cvlibs.net/datasets/kitti/eval_odometry.php) dataset. It is a
+feature-for-feature port of the original Python implementation, which is kept in
+[`legacy_python/`](legacy_python/) as the reference the port is checked against.
 
 It estimates a camera trajectory from a **single** image stream, detects revisited places,
 optimizes an SE(3) pose graph, and reports quantitative accuracy against ground truth.
@@ -30,6 +32,7 @@ delegated to an existing SLAM framework.
 - [Results](#results)
 - [Installation](#installation)
 - [C++ build and usage](#c-build-and-usage)
+- [Python reference implementation](#python-reference-implementation)
 - [Dataset setup](#dataset-setup)
 - [Usage](#usage)
 - [Repository structure](#repository-structure)
@@ -65,12 +68,12 @@ flowchart TB
     end
 
     subgraph FRONTEND["Front end — per frame"]
-        DET["ORB detection<br/>features/detector.py"]
-        MATCH["Descriptor matching<br/>ratio test · cross-check · distance<br/>features/matcher.py"]
-        EMAT["Essential matrix, MAGSAC++<br/>geometry/epipolar.py"]
+        DET["ORB detection<br/>features/detector"]
+        MATCH["Descriptor matching<br/>ratio test · cross-check · distance<br/>features/matcher"]
+        EMAT["Essential matrix, MAGSAC++<br/>geometry/epipolar"]
         DEGEN["Degeneracy check<br/>homography vs essential<br/>+ stationary detection"]
         POSE["Pose recovery + validation<br/>cheirality · det(R)=+1 · rotation bound"]
-        SCALE["Scale strategy<br/>odometry/scale.py"]
+        SCALE["Scale strategy<br/>odometry/scale"]
         TRAJ["Trajectory accumulation<br/>T_w_i+1 = T_w_i · T_i_i+1"]
     end
 
@@ -80,7 +83,7 @@ flowchart TB
         BOW["TF-IDF BoW retrieval<br/>+ temporal & path exclusion"]
         GEOVER["Geometric verification<br/>re-match + essential matrix"]
         LSCALE["Loop scale recovery<br/>tri-view depth ratio"]
-        PG["SE(3) pose graph<br/>optimization/pose_graph.py"]
+        PG["SE(3) pose graph<br/>optimization/pose_graph"]
         OPT["GTSAM Levenberg-Marquardt<br/>Huber-robust loop factors"]
     end
 
@@ -122,7 +125,8 @@ factor, and optional CLAHE contrast equalisation for strongly backlit sequences.
 available as a drop-in alternative (`features.detector: sift`); the matcher selects the
 Hamming or L2 norm automatically from the descriptor dtype, so nothing downstream changes.
 
-*Implementation:* [`features/detector.py`](src/monocular_slam/features/detector.py)
+*Implementation:* [`features/detector.cpp`](src/features/detector.cpp)
+(Python: [`detector.py`](legacy_python/src/monocular_slam/features/detector.py))
 
 ### 2. Feature matching
 
@@ -140,7 +144,8 @@ Measured on the full KITTI sequence 00 run: 2980 keypoints per frame on average 
 1122 filtered correspondences per pair, of which 66.6% become epipolar inliers (751 per pair),
 and 91.3% of those inliers then pass the cheirality test.
 
-*Implementation:* [`features/matcher.py`](src/monocular_slam/features/matcher.py)
+*Implementation:* [`features/matcher.cpp`](src/features/matcher.cpp)
+(Python: [`matcher.py`](legacy_python/src/monocular_slam/features/matcher.py))
 
 ### 3. Essential-matrix pose estimation
 
@@ -191,7 +196,8 @@ is itself wrong, so de-rotating by it leaves a large residual and parallax looks
 healthy. Stationary frames are additionally caught by a median-optical-flow test and held at
 the previous pose, which is the correct estimate rather than a fallback.
 
-*Implementation:* [`geometry/epipolar.py`](src/monocular_slam/geometry/epipolar.py)
+*Implementation:* [`geometry/epipolar.cpp`](src/geometry/epipolar.cpp)
+(Python: [`epipolar.py`](legacy_python/src/monocular_slam/geometry/epipolar.py))
 
 ### 4. Monocular scale ambiguity
 
@@ -222,7 +228,8 @@ resume summary attaches the caveat to any claim derived from a ground-truth-scal
 
 **Results labelled `ground_truth` are not absolute-scale monocular localization results.**
 
-*Implementation:* [`odometry/scale.py`](src/monocular_slam/odometry/scale.py)
+*Implementation:* [`odometry/scale.cpp`](src/odometry/scale.cpp)
+(Python: [`scale.py`](legacy_python/src/monocular_slam/odometry/scale.py))
 
 ### 5. Loop closure detection
 
@@ -310,8 +317,10 @@ constraint with a heavily inflated translation sigma.
 Note also how well the recovery itself works: on sequence 05 the estimates track ground truth
 almost exactly (0.4 ↔ 0.3, 1.7 ↔ 1.7, 0.8 ↔ 0.7, 1.4 ↔ 1.4 m).
 
-*Implementation:* [`loop_closure/database.py`](src/monocular_slam/loop_closure/database.py),
-[`loop_closure/detector.py`](src/monocular_slam/loop_closure/detector.py)
+*Implementation:* [`loop_closure/database.cpp`](src/loop_closure/database.cpp),
+[`loop_closure/detector.cpp`](src/loop_closure/detector.cpp)
+(Python: [`database.py`](legacy_python/src/monocular_slam/loop_closure/database.py),
+[`detector.py`](legacy_python/src/monocular_slam/loop_closure/detector.py))
 
 ### 6. Pose-graph optimization
 
@@ -366,8 +375,10 @@ Blending between adjacent keyframes would distort the best local information ava
 cost is a small discontinuity at each keyframe boundary, bounded by how far the optimizer
 moved that keyframe.
 
-*Implementation:* [`optimization/pose_graph.py`](src/monocular_slam/optimization/pose_graph.py),
-[`optimization/gtsam_backend.py`](src/monocular_slam/optimization/gtsam_backend.py)
+*Implementation:* [`optimization/pose_graph.cpp`](src/optimization/pose_graph.cpp),
+[`optimization/gtsam_backend.cpp`](src/optimization/gtsam_backend.cpp)
+(Python: [`pose_graph.py`](legacy_python/src/monocular_slam/optimization/pose_graph.py),
+[`gtsam_backend.py`](legacy_python/src/monocular_slam/optimization/gtsam_backend.py))
 
 ---
 
@@ -411,8 +422,10 @@ ill-conditioned near identity — its derivative is unbounded there, so ~1e-16 o
 in the trace inflates to ~1e-8 rad, putting a spurious 1e-5° floor under the relative pose
 error between two similar trajectories.
 
-*Implementation:* [`evaluation/metrics.py`](src/monocular_slam/evaluation/metrics.py),
-[`evaluation/alignment.py`](src/monocular_slam/evaluation/alignment.py)
+*Implementation:* [`evaluation/metrics.cpp`](src/evaluation/metrics.cpp),
+[`evaluation/alignment.cpp`](src/evaluation/alignment.cpp)
+(Python: [`metrics.py`](legacy_python/src/monocular_slam/evaluation/metrics.py),
+[`alignment.py`](legacy_python/src/monocular_slam/evaluation/alignment.py))
 
 ---
 
@@ -450,6 +463,10 @@ would prune most of those before matching.
 ---
 
 ## Results
+
+The results block and figures below were produced by the Python reference implementation
+(`legacy_python/`). The C++ port's measured numbers on the same sequences, with its parity
+against these runs, are in [C++ build and usage](#c-build-and-usage).
 
 <!-- RESULTS:START -->
 > **All figures below are from real runs of this repository on KITTI Odometry.** They use `odometry.scale_source: ground_truth`, which takes the per-frame translation *magnitude* from ground truth. Monocular vision cannot recover absolute scale; the estimator recovers translation *direction* and full rotation. These numbers therefore measure trajectory shape, heading drift and loop-closure benefit — **not** metric-scale localization. See [Monocular scale ambiguity](#4-monocular-scale-ambiguity).
@@ -541,36 +558,20 @@ _Regenerate with `python scripts/report.py --update-readme`._
 
 ## Installation
 
-Requires **Python 3.10+**.
-
 ```bash
 git clone https://github.com/sohamkundu27/Monocular-Visual-SLAM-Localization.git
 cd Monocular-Visual-SLAM-Localization
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-pip install -r requirements.txt
-pip install -e .
 ```
 
-> **NumPy pin.** `gtsam` 4.2 wheels are compiled against the NumPy 1.x ABI, so the whole stack
-> is held below NumPy 2.0. This is specified in `pyproject.toml` and `requirements.txt`.
-
-Verify the install:
-
-```bash
-pytest -q
-python scripts/run_slam.py --help
-```
-
-The test suite runs entirely on synthetic data and needs no dataset download.
+The C++ build is the main implementation; see [C++ build and usage](#c-build-and-usage). The
+Python reference has its own setup in
+[Python reference implementation](#python-reference-implementation).
 
 ## C++ build and usage
 
-A C++17 port of the pipeline lives alongside the Python package (`include/mvslam/`, `src/`,
-`apps/`, `tests/test_*.cpp`). It mirrors the Python module structure one-to-one and is checked
-for numerical parity against the Python implementation using golden fixtures in `tests/golden/`.
+The C++17 pipeline is the top-level CMake project (`include/mvslam/`, `src/`, `apps/`,
+`tests/test_*.cpp`). It mirrors the Python module structure one-to-one and is checked for
+numerical parity against the Python implementation using golden fixtures in `tests/golden/`.
 Every number in this section was measured from the C++ build; anything not measured is
 reported as n/a, never copied from the Python results.
 
@@ -674,6 +675,31 @@ of 00, 01 and 05 are bit-identical to the sequential build (sequential-build res
 this on every build. Because the per-stage `timing.stages` totals for detect, match and pose
 are summed across threads, they can exceed the wall-clock runtime.
 
+## Python reference implementation
+
+The original Python implementation lives in [`legacy_python/`](legacy_python/) (package,
+scripts, pytest suite, `pyproject.toml`, `requirements.txt`). It is kept as the oracle for the
+C++ port: [`tools/export_golden.py`](tools/export_golden.py) runs it to regenerate
+`tests/golden/`, and [`tools/test_porting_report.py`](tools/test_porting_report.py) checks that
+every Python test has a C++ counterpart. It requires **Python 3.10+**:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r legacy_python/requirements.txt
+.venv/bin/pip install -e legacy_python
+
+(cd legacy_python && ../.venv/bin/python -m pytest -q)   # synthetic data, no download needed
+.venv/bin/python legacy_python/scripts/run_slam.py --help
+```
+
+> **NumPy pin.** `gtsam` 4.2 wheels are compiled against the NumPy 1.x ABI, so the whole stack
+> is held below NumPy 2.0. This is specified in `legacy_python/pyproject.toml` and
+> `legacy_python/requirements.txt`.
+
+Run the scripts from the repository root, so the shared `configs/kitti.yaml` and `outputs/`
+resolve. They take the same flags as the C++ executables:
+`legacy_python/scripts/{run_slam,run_vo,evaluate,report}.py`.
+
 ---
 
 ## Dataset setup
@@ -714,10 +740,13 @@ Point the tools at `<KITTI_ROOT>` with `--dataset-path`, or set `dataset.path` i
 
 ## Usage
 
+The examples use the C++ executables from `build/`. The Python reference takes the same flags:
+replace `build/<tool>` with `python legacy_python/scripts/<tool>.py`.
+
 ### Full SLAM
 
 ```bash
-python scripts/run_slam.py \
+build/run_slam \
     --sequence 00 \
     --dataset-path /path/to/KITTI/dataset \
     --config configs/kitti.yaml
@@ -744,40 +773,43 @@ Writes to `outputs/sequence_00/`:
 
 ```bash
 # Visual odometry only (no loop closure, no optimization)
-python scripts/run_vo.py --sequence 05 --dataset-path /path/to/KITTI/dataset
+build/run_vo --sequence 05 --dataset-path /path/to/KITTI/dataset
 
 # Quick smoke run on 300 frames
-python scripts/run_slam.py -s 00 --dataset-path /path/to/KITTI/dataset --max-frames 300
+build/run_slam -s 00 --dataset-path /path/to/KITTI/dataset --max-frames 300
 
 # Genuinely scale-free monocular, no ground-truth assistance
-python scripts/run_slam.py -s 00 --dataset-path /path/to/KITTI/dataset \
+build/run_slam -s 00 --dataset-path /path/to/KITTI/dataset \
     --set odometry.scale_source=none
 
 # Re-score saved trajectories without re-running the pipeline
-python scripts/evaluate.py outputs/sequence_00/trajectory_raw.txt \
+build/evaluate outputs/sequence_00/trajectory_raw.txt \
     --compare outputs/sequence_00/trajectory_optimized.txt \
     --sequence 00 --dataset-path /path/to/KITTI/dataset
 
 # Regenerate the resume metrics summary from completed runs
-python scripts/report.py --outputs outputs
+build/report --outputs outputs
 ```
 
 ### Configuration
 
 Every tunable lives in [`configs/kitti.yaml`](configs/kitti.yaml), typed and validated by
-`src/monocular_slam/config.py`. Unknown keys are **rejected**, not ignored — a typo that
-silently reverts a threshold to its default is very hard to spot in an experiment log.
+[`config.hpp`](include/mvslam/config.hpp) (Python:
+`legacy_python/src/monocular_slam/config.py`). Unknown keys are **rejected**, not ignored — a
+typo that silently reverts a threshold to its default is very hard to spot in an experiment log.
 
 Override anything from the command line:
 
 ```bash
-python scripts/run_slam.py -s 00 --dataset-path /path/to/kitti \
+build/run_slam -s 00 --dataset-path /path/to/kitti \
     --set features.max_features=4000 \
     --set odometry.ransac_threshold_px=0.75 \
     --set loop_closure.min_inliers=60
 ```
 
-Runs are deterministic: Python, NumPy and OpenCV RNGs are all seeded from `runtime.seed`.
+Runs are deterministic: the C++ build seeds its `std::mt19937_64` and OpenCV's RNG from
+`runtime.seed`, and the output does not depend on `MVSLAM_NUM_THREADS`. The Python reference
+seeds Python, NumPy and OpenCV the same way.
 
 ---
 
@@ -785,41 +817,43 @@ Runs are deterministic: Python, NumPy and OpenCV RNGs are all seeded from `runti
 
 ```
 .
+├── CMakeLists.txt                    # top-level C++17 build
+├── cmake/Dependencies.cmake          # OpenCV, GTSAM, Eigen + fetched libraries
 ├── configs/
-│   └── kitti.yaml                    # all tunables, typed and validated
-├── scripts/                          # thin wrappers runnable from a checkout
-│   ├── run_slam.py  run_vo.py  evaluate.py  report.py
-├── src/monocular_slam/
-│   ├── config.py                     # typed config, YAML + dotted overrides
-│   ├── pipeline.py                   # end-to-end orchestration and outputs
-│   ├── reporting.py                  # resume metrics generation
+│   └── kitti.yaml                    # all tunables, typed and validated (shared)
+├── apps/                             # run_slam, run_vo, evaluate, report executables
+├── include/mvslam/                   # public headers, one per Python module
+│   ├── config.hpp  pipeline.hpp  reporting.hpp  errors.hpp
 │   ├── cli/                          # argument parsing and entry points
-│   ├── datasets/
-│   │   ├── calibration.py            # KITTI calib.txt, pinhole model
-│   │   └── kitti.py                  # sequence loader, ground truth, timestamps
-│   ├── features/
-│   │   ├── detector.py               # ORB / SIFT
-│   │   └── matcher.py                # filter cascade + visualisation
-│   ├── geometry/
-│   │   ├── transforms.py             # SE(3)/SO(3) primitives, Lie maps
-│   │   ├── pose.py                   # Trajectory container
-│   │   └── epipolar.py               # essential matrix, pose recovery, degeneracy
-│   ├── odometry/
-│   │   ├── scale.py                  # pluggable monocular scale strategies
-│   │   └── visual_odometry.py        # front end + trajectory accumulation
-│   ├── loop_closure/
-│   │   ├── database.py               # keyframes, binary vocabulary, TF-IDF BoW
-│   │   └── detector.py               # retrieval, verification, scale recovery
-│   ├── optimization/
-│   │   ├── pose_graph.py             # framework-agnostic SE(3) graph
-│   │   └── gtsam_backend.py          # GTSAM factor graph and solver
-│   ├── evaluation/
-│   │   ├── alignment.py              # Umeyama sim3 / se3
-│   │   ├── metrics.py                # ATE, RPE, KITTI drift
-│   │   └── plotting.py               # all figures
+│   ├── compat/                       # Python-identical float/JSON/YAML/CSV/NumPy behaviour
+│   ├── datasets/                     # KITTI calib.txt, sequence loader, ground truth
+│   ├── features/                     # ORB / SIFT detector, matcher filter cascade
+│   ├── geometry/                     # SE(3)/SO(3), Trajectory, essential matrix + degeneracy
+│   ├── odometry/                     # scale strategies, front end + trajectory accumulation
+│   ├── loop_closure/                 # binary vocabulary, TF-IDF BoW, retrieval + verification
+│   ├── optimization/                 # SE(3) pose graph, GTSAM factor graph and solver
+│   ├── evaluation/                   # Umeyama sim3/se3, ATE/RPE/KITTI drift, OpenCV plots
 │   └── utils/                        # logging, seeding, timing
-├── tests/                            # runs without the KITTI download
-├── docs/results/                     # published figures the README renders
+├── src/                              # implementations, same layout as include/mvslam/
+├── tests/
+│   ├── test_*.cpp                    # GoogleTest suite, runs without the KITTI download
+│   ├── TEST_PORTING.md               # every Python test -> its C++ counterpart
+│   ├── support/                      # golden loader, synthetic scenes, test utilities
+│   └── golden/                       # fixtures exported from the Python reference
+├── tools/
+│   ├── build_deps.sh                 # builds OpenCV/OpenBLAS/GTSAM/Boost/Eigen locally
+│   ├── export_golden.py              # regenerates tests/golden/ from legacy_python/
+│   ├── golden_recorder.py            # pytest plugin recording per-test random data
+│   ├── test_porting_report.py        # regenerates tests/TEST_PORTING.md
+│   └── compare_kitti.py              # full-sequence C++ vs Python parity check
+├── legacy_python/                    # the original Python implementation (reference)
+│   ├── pyproject.toml  requirements.txt
+│   ├── scripts/                      # run_slam.py  run_vo.py  evaluate.py  report.py
+│   ├── src/monocular_slam/           # the Python package
+│   └── tests/                        # the 522-test pytest suite
+├── docs/
+│   ├── results/                      # published figures the README renders
+│   └── cpp_parity*.json              # measured C++ vs Python full-sequence parity
 └── outputs/                          # git-ignored, except resume_metrics.md
     └── sequence_XX/                  # one directory per benchmark run
 ```
@@ -849,9 +883,11 @@ comments. Two of them — the loop translation source and that plausibility gate
 *because* an initial implementation made the optimized trajectory worse than the raw one, and
 the measurement said why.
 
-**The pose graph is framework-agnostic.** `PoseGraph` is plain NumPy with its own validation
-and residual diagnostics; `gtsam_backend.py` is the only file that imports GTSAM, and it does
-so lazily so the front end and metrics work without it.
+**The pose graph is framework-agnostic.** `PoseGraph` is plain Eigen (NumPy in the Python
+reference) with its own validation and residual diagnostics. `optimization/gtsam_backend` is
+the only module that uses GTSAM; `version.cpp` includes it only to report its version. In the
+Python reference, `gtsam_backend.py` imports GTSAM lazily, so the front end and metrics work
+without it.
 
 **Structural problems are caught before the solver sees them.** Disconnected components, invalid
 SE(3), self-loops and non-positive sigmas produce an actionable message instead of GTSAM's

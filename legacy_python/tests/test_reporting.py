@@ -244,7 +244,8 @@ class TestReadmeInjection:
         """Guards against the markers being edited out of the real README."""
         from pathlib import Path as _Path
 
-        readme = _Path(__file__).resolve().parent.parent / "README.md"
+        # legacy_python/tests/ -> repository root.
+        readme = _Path(__file__).resolve().parents[2] / "README.md"
         text = readme.read_text(encoding="utf-8")
         assert "<!-- RESULTS:START -->" in text
         assert "<!-- RESULTS:END -->" in text

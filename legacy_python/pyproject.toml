@@ -40,6 +40,8 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The suite runs from legacy_python/ with or without `pip install -e .`.
+pythonpath = ["src"]
 addopts = "-q"
 filterwarnings = ["ignore::DeprecationWarning"]
 

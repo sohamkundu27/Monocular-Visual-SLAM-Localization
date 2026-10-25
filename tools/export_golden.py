@@ -21,7 +21,10 @@ Output layout (``tests/golden/``):
     same OpenCV code).
 ``kitti/``
     First-300-frame runs of KITTI 00 and 05 and full-sequence references,
-    copied from Python runs of ``scripts/run_slam.py``.
+    copied from Python runs of ``legacy_python/scripts/run_slam.py``.
+
+The Python implementation lives in ``legacy_python/``; the goldens stay in the
+top-level ``tests/golden/`` next to the C++ tests that read them.
 
 Arrays use the same exact base64 encoding as the recorder. Floats that must be
 compared bit-for-bit are stored as ``float.hex()`` strings.
@@ -45,8 +48,9 @@ from pathlib import Path
 import numpy as np
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "src"))
-sys.path.insert(0, str(REPO / "tests"))
+LEGACY = REPO / "legacy_python"
+sys.path.insert(0, str(LEGACY / "src"))
+sys.path.insert(0, str(LEGACY / "tests"))
 sys.path.insert(0, str(REPO / "tools"))
 
 import cv2  # noqa: E402
@@ -997,9 +1001,11 @@ def record_test_data() -> list:
     if out.exists():
         shutil.rmtree(out)
     command = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p",
-               "golden_recorder", "--golden-out", str(out), str(REPO / "tests")]
+               "golden_recorder", "--golden-out", str(out), str(LEGACY / "tests")]
     env = {**__import__("os").environ, "PYTHONPATH": str(REPO / "tools")}
-    completed = subprocess.run(command, cwd=REPO, env=env, capture_output=True, text=True)
+    # Run from legacy_python/ so its pyproject.toml supplies the pytest
+    # settings and node ids stay "tests/test_x.py::...".
+    completed = subprocess.run(command, cwd=LEGACY, env=env, capture_output=True, text=True)
     print("  " + completed.stdout.strip().splitlines()[-1])
     if completed.returncode != 0:
         print(completed.stdout[-4000:])
