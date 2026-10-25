@@ -29,7 +29,7 @@ delegated to an existing SLAM framework.
 - [Performance](#performance)
 - [Results](#results)
 - [Installation](#installation)
-- [C++ build](#c-build)
+- [C++ build and usage](#c-build-and-usage)
 - [Dataset setup](#dataset-setup)
 - [Usage](#usage)
 - [Repository structure](#repository-structure)
@@ -423,7 +423,9 @@ Every run is instrumented per stage with `time.perf_counter`; the totals land in
 reads per call, negligible against ~7 ms of ORB detection, so instrumentation is always on
 rather than behind a flag.
 
-Measured on the full KITTI sequence 00 run (4541 frames, single CPU core):
+Measured with the Python implementation on the full KITTI sequence 00 run (4541 frames,
+single CPU core). The C++ port's throughput is in
+[C++ build and usage](#c-build-and-usage).
 
 | Stage | Total | Per call | Calls |
 |---|---:|---:|---:|
@@ -564,11 +566,13 @@ python scripts/run_slam.py --help
 
 The test suite runs entirely on synthetic data and needs no dataset download.
 
-## C++ build
+## C++ build and usage
 
 A C++17 port of the pipeline lives alongside the Python package (`include/mvslam/`, `src/`,
 `apps/`, `tests/test_*.cpp`). It mirrors the Python module structure one-to-one and is checked
 for numerical parity against the Python implementation using golden fixtures in `tests/golden/`.
+Every number in this section was measured from the C++ build; anything not measured is
+reported as n/a, never copied from the Python results.
 
 **Dependency versions.** These match what the Python reference runs against, so the front end
 calls the same OpenCV code with the same LAPACK and IPP back ends:
@@ -588,14 +592,87 @@ OpenBLAS on, Eigen **off**, pthreads backend, SSE3 baseline with runtime dispatc
 
 ```bash
 tools/build_deps.sh                       # -> $HOME/opt/mvslam-deps/install
-cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=$HOME/opt/mvslam-deps/install
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=$HOME/opt/mvslam-deps/install \
+      -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+ctest --test-dir build -j 8 --output-on-failure
 ```
 
 OpenBLAS needs a Fortran compiler for its LAPACK; pass `FC=/path/to/gfortran` if it is not on
 `PATH`. `-DMVSLAM_NATIVE=ON` enables `-march=native`. It is off by default because it changes
-floating-point results (FMA contraction) and must match how GTSAM was compiled.
+floating-point results (FMA contraction) and must match how GTSAM was compiled. Other options:
+`-DMVSLAM_WERROR=ON` turns warnings into errors (CI uses it), and
+`-DMVSLAM_KITTI_DATASET=/path/to/KITTI/dataset` (or the `MVSLAM_KITTI_DATASET` environment
+variable) enables the KITTI parity tests, which otherwise skip.
+
+The suite has 536 CTest cases; all 522 Python tests have a C++ counterpart, mapped in
+[`tests/TEST_PORTING.md`](tests/TEST_PORTING.md). Tests that assert bit-level parity with the
+Python/cv2 4.13 reference skip themselves when built against a different OpenCV major.minor, as
+in CI, which uses Ubuntu's OpenCV 4.6.
+
+**Command line.** The four executables take the same flags, defaults and exit codes as the
+Python scripts, including repeatable `--set section.key=value` overrides. Unknown config keys
+are rejected. Run them from the repository root so the default `configs/kitti.yaml` and
+`outputs/` paths resolve:
+
+```bash
+# Full SLAM: writes metrics.json, diagnostics.csv, KITTI-format trajectories,
+# config.resolved.yaml, run.log and the figures to outputs/sequence_00/
+build/run_slam -s 00 --dataset-path /path/to/KITTI/dataset --config configs/kitti.yaml
+
+# Visual odometry only, or a 300-frame smoke run
+build/run_vo -s 05 --dataset-path /path/to/KITTI/dataset
+build/run_slam -s 00 --dataset-path /path/to/KITTI/dataset --max-frames 300
+
+# Re-score saved trajectories, and regenerate outputs/resume_metrics.md
+build/evaluate outputs/sequence_00/trajectory_raw.txt \
+    --compare outputs/sequence_00/trajectory_optimized.txt -s 00 --dataset-path /path/to/KITTI/dataset
+build/report --outputs outputs
+```
+
+The output files have the same names, formats and `metrics.json` schema as the Python ones. The
+`environment` block reports the C++ compiler and the OpenCV, GTSAM and Eigen versions. Figures
+are drawn with OpenCV into PNGs, and each one also gets a `<name>_data.csv` holding the plotted
+series.
+
+**Parity with Python on full KITTI sequences.** These are measured C++ runs with the default
+config (`scale_source: ground_truth`), checked by
+[`tools/compare_kitti.py`](tools/compare_kitti.py) against the Python reference runs committed
+in `tests/golden/kitti/`. Raw results are in [`docs/cpp_parity.json`](docs/cpp_parity.json).
+
+| Sequence | Frames | Raw position max abs diff | ATE raw, C++ / Python | ATE optimized, C++ / Python | Loops, C++ / Python |
+|---:|---:|---:|---:|---:|---:|
+| 00 | 4541 | 5.0e-08 m | 8.4175 / 8.4175 m | 2.7759 / 2.6978 m (+2.9%) | 30 / 30 |
+| 01 | 1101 | 5.0e-07 m | 16.2054 / 16.2054 m | 17.6665 / 17.6665 m (0%) | 1 / 1 |
+| 05 | 2761 | 5.0e-08 m | 11.8763 / 11.8763 m | 3.6362 / 4.0293 m (−9.8%) | 18 / 18 |
+
+The raw visual odometry is the same up to the `%.9e` export rounding of the reference, and the
+per-sequence odometry counts (pose rate, failures, statuses) are identical. The back end can
+differ slightly for one reason: the loop-closure vocabulary is trained with binary k-means
+seeded from `std::mt19937_64` rather than NumPy's generator. It is statistically equivalent by
+design, not bit-identical. The bounds are 10% on ATE and 15% on loop count, and every sequence
+is inside them.
+
+**Throughput.** Measured on an Intel Core i9-12900K (24 hardware threads). FPS is
+`runtime_fps` from `metrics.json`: frames divided by the pipeline's wall-clock runtime (VO,
+loop closure and optimization, every frame processed). For each run, the whole process's wall
+time from `/usr/bin/time` was within 0.5 s of that runtime.
+
+| Sequence | C++ FPS | C++ runtime | C++ FPS, sequential front end | Python FPS (same machine) |
+|---:|---:|---:|---:|---:|
+| 00 | 44.4 | 102.2 s | 18.1 | 16.5 |
+| 01 | 54.5 | 20.2 s | 22.1 | 17.8 |
+| 05 | 51.7 | 53.4 s | 19.6 | 17.4 |
+
+Detection, matching and two-view pose estimation depend only on the two images, so the front
+end runs them for a batch of frames on worker threads. `MVSLAM_NUM_THREADS` sets the thread
+count; it defaults to the hardware concurrency, and `1` gives a plain sequential loop. All
+order-dependent work stays sequential: scale lookup, trajectory accumulation, keyframes, loop
+closure and the pose graph. The output therefore does not depend on the thread count. Full runs
+of 00, 01 and 05 are bit-identical to the sequential build (sequential-build results in
+[`docs/cpp_parity_sequential.json`](docs/cpp_parity_sequential.json)), and a CTest case checks
+this on every build. Because the per-stage `timing.stages` totals for detect, match and pose
+are summed across threads, they can exceed the wall-clock runtime.
 
 ---
 
