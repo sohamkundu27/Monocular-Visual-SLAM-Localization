@@ -1,0 +1,230 @@
+{
+  "00": {
+    "frames": 4541,
+    "raw_position_max_abs_m": 5.009999881622207e-08,
+    "raw_pose_max_abs": null,
+    "metrics": {
+      "ate_rmse_raw_m": {
+        "cpp": 8.4175,
+        "python": 8.4175,
+        "relative_difference": 0.0
+      },
+      "ate_rmse_optimized_m": {
+        "cpp": 2.7759,
+        "python": 2.6978,
+        "relative_difference": 0.028949514419156372
+      },
+      "loop_closures_detected": {
+        "cpp": 30,
+        "python": 30,
+        "relative_difference": 0.0
+      }
+    },
+    "runtime_fps": 44.41,
+    "runtime_s": 102.242,
+    "stages": {
+      "detect": {
+        "total_s": 55.8162,
+        "mean_ms": 12.292,
+        "max_ms": 214.835,
+        "calls": 4541
+      },
+      "loop_detect": {
+        "total_s": 39.7419,
+        "mean_ms": 39741.887,
+        "max_ms": 39741.887,
+        "calls": 1
+      },
+      "loop_index": {
+        "total_s": 7.344,
+        "mean_ms": 7343.972,
+        "max_ms": 7343.972,
+        "calls": 1
+      },
+      "match": {
+        "total_s": 843.1898,
+        "mean_ms": 185.725,
+        "max_ms": 547.526,
+        "calls": 4540
+      },
+      "optimize": {
+        "total_s": 0.0696,
+        "mean_ms": 69.555,
+        "max_ms": 69.555,
+        "calls": 1
+      },
+      "pose": {
+        "total_s": 250.7669,
+        "mean_ms": 55.235,
+        "max_ms": 146.93,
+        "calls": 4540
+      },
+      "vocabulary": {
+        "total_s": 1.8342,
+        "mean_ms": 1834.193,
+        "max_ms": 1834.193,
+        "calls": 1
+      }
+    },
+    "checks": {
+      "raw_positions": true,
+      "odometry_counts": true,
+      "ate_rmse_raw_m": true,
+      "ate_rmse_optimized_m": true,
+      "loop_closures_detected": true
+    },
+    "passed": true
+  },
+  "01": {
+    "frames": 1101,
+    "raw_position_max_abs_m": 4.999999418942025e-07,
+    "raw_pose_max_abs": null,
+    "metrics": {
+      "ate_rmse_raw_m": {
+        "cpp": 16.2054,
+        "python": 16.2054,
+        "relative_difference": 0.0
+      },
+      "ate_rmse_optimized_m": {
+        "cpp": 17.6665,
+        "python": 17.6665,
+        "relative_difference": 0.0
+      },
+      "loop_closures_detected": {
+        "cpp": 1,
+        "python": 1,
+        "relative_difference": 0.0
+      }
+    },
+    "runtime_fps": 54.48,
+    "runtime_s": 20.21,
+    "stages": {
+      "detect": {
+        "total_s": 10.5815,
+        "mean_ms": 9.611,
+        "max_ms": 190.373,
+        "calls": 1101
+      },
+      "loop_detect": {
+        "total_s": 3.5758,
+        "mean_ms": 3575.794,
+        "max_ms": 3575.794,
+        "calls": 1
+      },
+      "loop_index": {
+        "total_s": 3.9032,
+        "mean_ms": 3903.217,
+        "max_ms": 3903.217,
+        "calls": 1
+      },
+      "match": {
+        "total_s": 168.6899,
+        "mean_ms": 153.354,
+        "max_ms": 413.787,
+        "calls": 1100
+      },
+      "optimize": {
+        "total_s": 0.0145,
+        "mean_ms": 14.46,
+        "max_ms": 14.46,
+        "calls": 1
+      },
+      "pose": {
+        "total_s": 50.7224,
+        "mean_ms": 46.111,
+        "max_ms": 140.079,
+        "calls": 1100
+      },
+      "vocabulary": {
+        "total_s": 1.823,
+        "mean_ms": 1823.047,
+        "max_ms": 1823.047,
+        "calls": 1
+      }
+    },
+    "checks": {
+      "raw_positions": true,
+      "odometry_counts": true,
+      "ate_rmse_raw_m": true,
+      "ate_rmse_optimized_m": true,
+      "loop_closures_detected": true
+    },
+    "passed": true
+  },
+  "05": {
+    "frames": 2761,
+    "raw_position_max_abs_m": 4.999999703159119e-08,
+    "raw_pose_max_abs": null,
+    "metrics": {
+      "ate_rmse_raw_m": {
+        "cpp": 11.8763,
+        "python": 11.8763,
+        "relative_difference": 0.0
+      },
+      "ate_rmse_optimized_m": {
+        "cpp": 3.6362,
+        "python": 4.0293,
+        "relative_difference": 0.09756037028764301
+      },
+      "loop_closures_detected": {
+        "cpp": 18,
+        "python": 18,
+        "relative_difference": 0.0
+      }
+    },
+    "runtime_fps": 51.72,
+    "runtime_s": 53.387,
+    "stages": {
+      "detect": {
+        "total_s": 33.6683,
+        "mean_ms": 12.194,
+        "max_ms": 194.076,
+        "calls": 2761
+      },
+      "loop_detect": {
+        "total_s": 14.8192,
+        "mean_ms": 14819.194,
+        "max_ms": 14819.194,
+        "calls": 1
+      },
+      "loop_index": {
+        "total_s": 4.5195,
+        "mean_ms": 4519.502,
+        "max_ms": 4519.502,
+        "calls": 1
+      },
+      "match": {
+        "total_s": 510.8646,
+        "mean_ms": 185.096,
+        "max_ms": 441.41,
+        "calls": 2760
+      },
+      "optimize": {
+        "total_s": 0.0261,
+        "mean_ms": 26.135,
+        "max_ms": 26.135,
+        "calls": 1
+      },
+      "pose": {
+        "total_s": 151.0527,
+        "mean_ms": 54.729,
+        "max_ms": 143.895,
+        "calls": 2760
+      },
+      "vocabulary": {
+        "total_s": 1.8164,
+        "mean_ms": 1816.424,
+        "max_ms": 1816.424,
+        "calls": 1
+      }
+    },
+    "checks": {
+      "raw_positions": true,
+      "odometry_counts": true,
+      "ate_rmse_raw_m": true,
+      "ate_rmse_optimized_m": true,
+      "loop_closures_detected": true
+    },
+    "passed": true
+  }
+}
