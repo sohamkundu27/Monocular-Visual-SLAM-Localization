@@ -23,13 +23,18 @@ else()
     target_include_directories(mvslam_testsupport INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
+# Optional KITTI root for the parity tests (they skip when unset/missing);
+# the MVSLAM_KITTI_DATASET environment variable overrides it at run time.
+set(MVSLAM_KITTI_DATASET "" CACHE PATH "KITTI odometry root (holding sequences/) for parity tests")
+
 function(mvslam_add_test name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE mvslam mvslam_testsupport mvslam_warnings
         GTest::gtest_main)
     target_compile_definitions(${name} PRIVATE
         MVSLAM_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
-        MVSLAM_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+        MVSLAM_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        MVSLAM_KITTI_DATASET_DEFAULT="${MVSLAM_KITTI_DATASET}")
     foreach(_app IN ITEMS run_slam run_vo evaluate report)
         if(TARGET ${_app})
             string(TOUPPER ${_app} _APP)
