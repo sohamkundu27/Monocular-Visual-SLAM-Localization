@@ -14,6 +14,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -27,6 +28,15 @@ std::string repr(bool value);
 
 /// ``repr(s)`` for a str: quoted and escaped the way Python prints it.
 std::string repr_str(const std::string& s);
+
+/// ``int(text)`` for a str: optional sign, decimal digits with single
+/// underscores between digits, surrounding whitespace allowed. nullopt where
+/// Python raises ValueError (or the value exceeds int64).
+std::optional<std::int64_t> parse_int(const std::string& text);
+
+/// ``float(text)``: decimal/exponent forms with digit-separating underscores,
+/// inf/infinity/nan in any case, surrounding whitespace allowed.
+std::optional<double> parse_float(const std::string& text);
 
 /// ``round(x, ndigits)``.
 double round(double x, int ndigits);

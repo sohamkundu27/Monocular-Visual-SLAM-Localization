@@ -1,11 +1,15 @@
 #include "mvslam/compat/pyformat.hpp"
 
+#include <algorithm>
+#include <cerrno>
 #include <cctype>
 #include <charconv>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
+#include <regex>
 #include <stdexcept>
 
 #include "mvslam/errors.hpp"
@@ -147,6 +151,70 @@ std::string repr_str(const std::string& s) {
     }
     out.push_back(quote);
     return out;
+}
+
+namespace {
+std::string strip_ws(const std::string& s) {
+    const auto begin = s.find_first_not_of(" \t\n\r\f\v");
+    if (begin == std::string::npos) {
+        return "";
+    }
+    const auto end = s.find_last_not_of(" \t\n\r\f\v");
+    return s.substr(begin, end - begin + 1);
+}
+}  // namespace
+
+// int(text): optional sign, decimal digits with single underscores between
+// digits, surrounding whitespace allowed.
+std::optional<std::int64_t> parse_int(const std::string& text) {
+    static const std::regex re("^[+-]?[0-9](?:_?[0-9])*$");
+    const std::string s = strip_ws(text);
+    if (!std::regex_match(s, re)) {
+        return std::nullopt;
+    }
+    std::string digits;
+    for (char c : s) {
+        if (c != '_') {
+            digits.push_back(c);
+        }
+    }
+    errno = 0;
+    const long long v = std::strtoll(digits.c_str(), nullptr, 10);
+    if (errno == ERANGE) {
+        return std::nullopt;
+    }
+    return static_cast<std::int64_t>(v);
+}
+
+// float(text): decimal / exponent forms with digit-separating underscores,
+// inf/infinity/nan in any case, surrounding whitespace allowed.
+std::optional<double> parse_float(const std::string& text) {
+    static const std::regex number(
+        "^[+-]?(?:(?:[0-9](?:_?[0-9])*)?\\.[0-9](?:_?[0-9])*|[0-9](?:_?[0-9])*\\.?)"
+        "(?:[eE][+-]?[0-9](?:_?[0-9])*)?$");
+    static const std::regex special("^[+-]?(?:inf|infinity|nan)$", std::regex::icase);
+    const std::string s = strip_ws(text);
+    if (std::regex_match(s, special)) {
+        std::string lowered = s;
+        std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        const bool negative = lowered[0] == '-';
+        if (lowered.find("nan") != std::string::npos) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+        return negative ? -std::numeric_limits<double>::infinity()
+                        : std::numeric_limits<double>::infinity();
+    }
+    if (!std::regex_match(s, number)) {
+        return std::nullopt;
+    }
+    std::string cleaned;
+    for (char c : s) {
+        if (c != '_') {
+            cleaned.push_back(c);
+        }
+    }
+    return std::strtod(cleaned.c_str(), nullptr);
 }
 
 double round(double x, int ndigits) {
